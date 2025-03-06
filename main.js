@@ -1,11 +1,18 @@
 "use strict";
 
-// Получаем canvas, контекст и кнопку полного экрана
+// Получаем canvas, контекст и HTML-элементы оверлеев
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const fullscreenButton = document.getElementById("fullscreenButton");
+const loginContainer = document.getElementById("loginContainer");
+const loginButton = document.getElementById("loginButton");
+const nicknameInput = document.getElementById("nicknameInput");
+const walletInput = document.getElementById("walletInput");
+const recordsContainer = document.getElementById("recordsContainer");
+const recordsTableContainer = document.getElementById("recordsTableContainer");
+const closeRecordsButton = document.getElementById("closeRecordsButton");
 
-// Обработчик для переключения полноэкранного режима
+// Обработчик полного экрана
 fullscreenButton.addEventListener("click", () => {
   if (!document.fullscreenElement) {
     canvas.requestFullscreen();
@@ -14,7 +21,7 @@ fullscreenButton.addEventListener("click", () => {
   }
 });
 
-// Подгоняем размеры canvas под окно
+// Подгоняем размеры canvas
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -38,8 +45,6 @@ const COLOR_SCORE_OUTLINE = "#7AC0D6";
 const COLOR_SCORE_TXT = "#7AC0D6";
 const COLOR_MENU_TXT = "#7AC0D6";
 const COLOR_MENU_SEL = "#FFFFFF";
-const COLOR_TIMER_BG = "#021013";
-const COLOR_TIMER_OUTLINE = "#7AC0D6";
 const COLOR_TIMER_TXT = "#7AC0D6";
 const COLOR_TIME_PLUS = "green";
 
@@ -48,22 +53,34 @@ let cells = {}; // ключ "x_y" → объект Digit
 let generatedChunks = new Set();
 let folderScores = [0, 0];
 const folderNames = ["Перевёрнутые", "Иная анимация"];
-let topRecords = [];
 
-// Фактор сложности (меньшее число – сложнее)
+// Для хранения глобальных результатов используем localStorage с ключом "globalRecords"
+// Каждый результат – объект: { nickname, wallet, score }
+function getGlobalRecords() {
+  let rec = localStorage.getItem("globalRecords");
+  return rec ? JSON.parse(rec) : [];
+}
+function setGlobalRecords(records) {
+  localStorage.setItem("globalRecords", JSON.stringify(records));
+}
+function addGlobalRecord(record) {
+  let records = getGlobalRecords();
+  records.push(record);
+  // Сортировка по убыванию очков
+  records.sort((a, b) => b.score - a.score);
+  setGlobalRecords(records);
+}
+
+// Фактор сложности – убираем выбор, игра всегда в стандартном (сложном) режиме
 let difficultyFactor = 1;
 
-// Состояния игры: "menu", "difficulty", "game", "game_over", "records"
+// Состояния игры: "menu", "login", "game", "game_over"
 let gameState = "menu";
-let menuOptions = ["Начать игру", "Сложность", "Рекорды", "Выход"];
-// Для меню будем считать, что каждый пункт занимает по 40px по высоте.
-let menuItemHeight = 40;
 
-let difficultyOptions = ["Лёгкая", "Средняя", "Сложная"];
-let difficultyFactors = [4, 2, 1];
-let difficultySelection = 2; // по умолчанию "Сложная"
+// Для меню (canvas‑отрисовка)
+let menuOptions = ["Начать игру", "Рекорды", "Выход"];
 
-// Счёт, таймер и прочее
+// Счёт, таймер и пр.
 let scoreTotal = 0;
 let timeLeft = START_TIME;
 let flyingDigits = [];
@@ -80,11 +97,12 @@ let cameraStart = { x: 0, y: 0 };
 
 let lastUpdateTime = performance.now();
 
-// ----------------------
-// Классы
-// ----------------------
+// Текущий игрок
+let currentPlayer = null; // { nickname, wallet }
 
-// Класс Digit – отрисовываемая цифра с анимацией появления и вращения
+// ----------------------
+// Классы игры (Digit, FlyingDigit, TimePlusAnimation)
+// ----------------------
 class Digit {
   constructor(gx, gy, value, anomaly, spawnTime = performance.now()) {
     this.gx = gx;
@@ -104,13 +122,10 @@ class Digit {
     this.appearDuration = 300 + Math.random() * 400; // мс
     this.appearStart = null;
   }
-  // Вычисляем позицию цифры с независимой анимацией
   screenPosition(cameraX, cameraY, currentTime) {
     let baseX = this.gx * CELL_SIZE + cameraX;
     let baseY = this.gy * CELL_SIZE + cameraY;
-    // Время, прошедшее с момента появления, в секундах
     let dt = (currentTime - this.spawnTime) / 1000;
-    // Уникальный угол для каждой цифры
     let angle = this.baseSpeed * dt + this.phaseOffset;
     let dx = this.baseAmplitude * Math.cos(angle);
     let dy = this.baseAmplitude * Math.sin(angle);
@@ -132,11 +147,9 @@ class Digit {
     }
     return { x: baseX + dx, y: baseY + dy, scale: scale, alpha: alpha };
   }
-  // Отрисовка цифры
   draw(ctx, cameraX, cameraY, currentTime) {
     let pos = this.screenPosition(cameraX, cameraY, currentTime);
     let finalScale = pos.scale;
-    // Для аномалии "Иная анимация" добавляем пульсацию
     if (this.anomaly === Digit.ANOMALY_STRANGE) {
       let pulsation = 0.2 * Math.sin(this.baseSpeed * 0.7 * ((currentTime - this.spawnTime) / 1000) + this.phaseOffset);
       finalScale *= (1.0 + pulsation);
@@ -161,7 +174,6 @@ Digit.ANOMALY_NONE = 0;
 Digit.ANOMALY_UPSIDE = 1;
 Digit.ANOMALY_STRANGE = 2;
 
-// Класс FlyingDigit – анимирует "улёт" цифры к папке
 class FlyingDigit {
   constructor(digit, sx, sy, ex, ey, startTime, duration) {
     this.digit = digit;
@@ -197,7 +209,6 @@ class FlyingDigit {
   }
 }
 
-// Класс TimePlusAnimation – для анимации бонусного времени "+N s"
 class TimePlusAnimation {
   constructor(text, startX, startY, startTime, duration = 2000) {
     this.text = text;
@@ -222,7 +233,7 @@ class TimePlusAnimation {
 }
 
 // ----------------------
-// Функции генерации поля (чанков)
+// Функции генерации игрового поля (чанков)
 // ----------------------
 function getChunkCoords(cx, cy) {
   let coords = [];
@@ -238,7 +249,6 @@ function getChunkCoords(cx, cy) {
 
 function generateClusterInChunk(cx, cy, anomaly, minSize = 5, maxSize = 9) {
   let allCoords = getChunkCoords(cx, cy);
-  // Перемешиваем координаты
   for (let i = allCoords.length - 1; i > 0; i--) {
     let j = Math.floor(Math.random() * (i + 1));
     [allCoords[i], allCoords[j]] = [allCoords[j], allCoords[i]];
@@ -428,14 +438,13 @@ canvas.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-// Обработка кликов – в режиме игры и меню
+// Обработка кликов в игре и меню
 canvas.addEventListener("click", (e) => {
   let rect = canvas.getBoundingClientRect();
   let mouseX = e.clientX - rect.left;
   let mouseY = e.clientY - rect.top;
   
   if (gameState === "game") {
-    // В режиме игры: сбор цифр по одному клику
     let clickedKey = getClickedDigit(mouseX, mouseY);
     if (clickedKey) {
       let parts = clickedKey.split("_").map(Number);
@@ -443,7 +452,6 @@ canvas.addEventListener("click", (e) => {
       let digit = cells[clickedKey];
       let anomaly = digit.anomaly;
       let currentTime = performance.now();
-      // Если клик по аномальной цифре
       if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
         let group = bfsCollectAnomaly(gx, gy, anomaly);
         if (group.length >= 5) {
@@ -465,7 +473,6 @@ canvas.addEventListener("click", (e) => {
           return;
         }
       }
-      // Если клик по группе по значению
       let groupVal = bfsCollectValue(gx, gy);
       if (groupVal.length >= 5) {
         let fx = canvas.width / 4;
@@ -485,7 +492,7 @@ canvas.addEventListener("click", (e) => {
       }
     }
   } else if (gameState === "menu") {
-    // Обработка клика по пунктам главного меню
+    // Меню с вариантами: "Начать игру", "Рекорды", "Выход"
     let optionAreaHeight = 40;
     let baseY = canvas.height / 2 - (menuOptions.length * optionAreaHeight) / 2;
     for (let i = 0; i < menuOptions.length; i++) {
@@ -494,41 +501,46 @@ canvas.addEventListener("click", (e) => {
           mouseY >= itemY - optionAreaHeight / 2 && mouseY <= itemY + optionAreaHeight / 2) {
         let option = menuOptions[i];
         if (option === "Начать игру") {
-          startGame();
-        } else if (option === "Сложность") {
-          gameState = "difficulty";
-          difficultySelection = 2;
+          // Если игрок ещё не ввёл данные, показать экран входа
+          if (!currentPlayer) {
+            loginContainer.style.display = "block";
+          } else {
+            startGame();
+          }
         } else if (option === "Рекорды") {
-          gameState = "records";
+          showRecordsOverlay();
         } else if (option === "Выход") {
           location.reload();
         }
         return;
       }
     }
-  } else if (gameState === "difficulty") {
-    // Обработка клика по меню выбора сложности
-    let optionAreaHeight = 40;
-    let baseY = canvas.height / 2 - (difficultyOptions.length * optionAreaHeight) / 2;
-    for (let i = 0; i < difficultyOptions.length; i++) {
-      let itemY = baseY + i * optionAreaHeight;
-      if (mouseX >= canvas.width / 2 - 150 && mouseX <= canvas.width / 2 + 150 &&
-          mouseY >= itemY - optionAreaHeight / 2 && mouseY <= itemY + optionAreaHeight / 2) {
-        difficultySelection = i;
-        difficultyFactor = difficultyFactors[i];
-        gameState = "menu";
-        return;
-      }
-    }
-  } else if (gameState === "records" || gameState === "game_over") {
-    // Клик в этих режимах возвращает в меню
+  } else if (gameState === "game_over") {
     gameState = "menu";
   }
 });
 
+// Обработка кнопки входа
+loginButton.addEventListener("click", () => {
+  let nickname = nicknameInput.value.trim();
+  let wallet = walletInput.value.trim();
+  if (!nickname || !wallet) {
+    alert("Заполните оба поля");
+    return;
+  }
+  currentPlayer = { nickname, wallet, score: 0 };
+  loginContainer.style.display = "none";
+  startGame();
+});
+
+// Обработка кнопки закрытия рейтинга
+closeRecordsButton.addEventListener("click", () => {
+  recordsContainer.style.display = "none";
+  gameState = "menu";
+});
+
 // ----------------------
-// Функции отрисовки экранов
-// ----------------------
+// Функции отрисовки экранов меню и Game Over (отрисовка на canvas)
 function drawMenu() {
   ctx.fillStyle = COLOR_BG;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -545,38 +557,6 @@ function drawMenu() {
   }
 }
 
-function drawDifficultyMenu() {
-  ctx.fillStyle = COLOR_BG;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.font = "36px Arial";
-  ctx.fillStyle = COLOR_MENU_TXT;
-  ctx.textAlign = "center";
-  ctx.fillText("Выберите сложность", canvas.width / 2, canvas.height / 4);
-  let optionAreaHeight = 40;
-  let baseY = canvas.height / 2 - (difficultyOptions.length * optionAreaHeight) / 2;
-  for (let i = 0; i < difficultyOptions.length; i++) {
-    ctx.font = "36px Arial";
-    ctx.fillStyle = (i === difficultySelection) ? COLOR_MENU_SEL : COLOR_MENU_TXT;
-    ctx.fillText(difficultyOptions[i], canvas.width / 2, baseY + i * optionAreaHeight);
-  }
-  ctx.font = "24px Arial";
-  ctx.fillText("Клик - подтвердить, клик вне - отмена", canvas.width / 2, canvas.height - 50);
-}
-
-function drawRecords() {
-  ctx.fillStyle = COLOR_BG;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.font = "36px Arial";
-  ctx.fillStyle = COLOR_MENU_TXT;
-  ctx.textAlign = "center";
-  ctx.fillText("Топ-10 Рекорды", canvas.width / 2, canvas.height / 6);
-  ctx.font = "24px Arial";
-  for (let i = 0; i < topRecords.length; i++) {
-    ctx.fillText(`${i + 1}. ${topRecords[i]}`, canvas.width / 2, canvas.height / 3 + i * 30);
-  }
-  ctx.fillText("Клик - вернуться", canvas.width / 2, canvas.height - 50);
-}
-
 let lastScore = 0;
 function drawGameOver() {
   ctx.fillStyle = COLOR_BG;
@@ -590,7 +570,11 @@ function drawGameOver() {
   ctx.fillText("Клик - в меню", canvas.width / 2, canvas.height - 50);
 }
 
+// ----------------------
+// Функции запуска игры, обновления и отрисовки игрового процесса
+// ----------------------
 function startGame() {
+  // Сброс переменных
   cells = {};
   generatedChunks.clear();
   folderScores = [0, 0];
@@ -599,6 +583,7 @@ function startGame() {
   flyingDigits = [];
   timeAnimations = [];
   slotsToRespawn = {};
+  // Инициализируем несколько чанков вокруг (0,0)
   for (let cx = -1; cx <= 2; cx++) {
     for (let cy = -1; cy <= 2; cy++) {
       generateChunk(cx, cy);
@@ -607,16 +592,17 @@ function startGame() {
   gameState = "game";
 }
 
-// ----------------------
-// Обновление и отрисовка игрового процесса
-// ----------------------
 function updateGame(dt) {
   let currentTime = performance.now();
   timeLeft -= dt / 1000;
   if (timeLeft <= 0) {
     gameState = "game_over";
     lastScore = scoreTotal;
-    tryAddRecord(scoreTotal);
+    // Обновляем запись текущего игрока
+    if (currentPlayer) {
+      currentPlayer.score = scoreTotal;
+      addGlobalRecord(currentPlayer);
+    }
     return;
   }
   ensureVisibleChunks();
@@ -640,6 +626,7 @@ function drawGame() {
   for (let fd of flyingDigits) {
     fd.draw(ctx, currentTime);
   }
+  // Рисуем области папок
   for (let i = 0; i < 2; i++) {
     let rectX = i * canvas.width / 2;
     let rectY = canvas.height - FOLDER_HEIGHT;
@@ -674,12 +661,6 @@ function gameLoop() {
     case "menu":
       drawMenu();
       break;
-    case "difficulty":
-      drawDifficultyMenu();
-      break;
-    case "records":
-      drawRecords();
-      break;
     case "game":
       updateGame(dt);
       drawGame();
@@ -692,15 +673,36 @@ function gameLoop() {
 }
 requestAnimationFrame(gameLoop);
 
-function tryAddRecord(score) {
-  if (topRecords.length < 10) {
-    topRecords.push(score);
-    topRecords.sort((a, b) => b - a);
-  } else {
-    if (score > Math.min(...topRecords)) {
-      topRecords.push(score);
-      topRecords.sort((a, b) => b - a);
-      topRecords.pop();
+// ----------------------
+// Функции отображения рейтинга (Records)
+// ----------------------
+
+// Форматирует биткойн-кошелек: первые 4 символа, затем ****, затем последние 4 символа
+function maskWallet(wallet) {
+  if (wallet.length <= 8) return wallet;
+  return wallet.substring(0, 4) + "****" + wallet.substring(wallet.length - 4);
+}
+
+function showRecordsOverlay() {
+  let records = getGlobalRecords();
+  // Создаем HTML таблицу
+  let html = "<table><tr><th>Никнейм</th><th>Биткойн кошелек</th><th>Счёт</th></tr>";
+  let currentPlayerIndex = -1;
+  records.forEach((rec, index) => {
+    // Если это текущий игрок, добавляем id для скроллинга
+    let rowId = (currentPlayer && rec.nickname === currentPlayer.nickname && rec.wallet === currentPlayer.wallet) ? " id='currentPlayerRow'" : "";
+    if (rowId) currentPlayerIndex = index;
+    html += `<tr${rowId}><td>${rec.nickname}</td><td>${rec.wallet.substring(0,4)}****${rec.wallet.substring(rec.wallet.length-4)}</td><td>${rec.score}</td></tr>`;
+  });
+  html += "</table>";
+  recordsTableContainer.innerHTML = html;
+  recordsContainer.style.display = "block";
+  gameState = "menu";
+  // Автопрокрутка к строке текущего игрока, если она есть
+  setTimeout(() => {
+    let row = document.getElementById("currentPlayerRow");
+    if (row) {
+      row.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  }
+  }, 100);
 }
