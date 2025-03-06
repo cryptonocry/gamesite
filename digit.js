@@ -39,8 +39,7 @@ export class Digit {
       this.appearStart = currentTime;
     }
 
-    let scale = 1.0;
-    let alpha = 1.0;
+    let scale = 1.0, alpha = 1.0;
     if (this.appearStart !== null) {
       const progress = Math.min(1.0, (currentTime - this.appearStart) / this.appearDuration);
       scale = progress;
@@ -54,17 +53,13 @@ export class Digit {
     const pos = this.screenPosition(cameraX, cameraY, currentTime);
     let finalScale = pos.scale;
     if (this.anomaly === Digit.ANOMALY_STRANGE) {
-      const pulsation = 0.2 * Math.sin(
-        this.baseSpeed * 0.7 * ((currentTime - this.spawnTime) / 1000) + this.phaseOffset
-      );
+      const pulsation = 0.2 * Math.sin(this.baseSpeed * 0.7 * ((currentTime - this.spawnTime) / 1000) + this.phaseOffset);
       finalScale *= (1.0 + pulsation);
     }
-
     ctx.save();
     ctx.globalAlpha = pos.alpha;
     ctx.font = `${24 * finalScale}px Arial`;
     ctx.fillStyle = "#7AC0D6";
-
     if (this.anomaly === Digit.ANOMALY_UPSIDE) {
       ctx.save();
       ctx.translate(pos.x, pos.y);
@@ -78,8 +73,8 @@ export class Digit {
   }
 }
 
-Digit.ANOMALY_NONE    = 0;
-Digit.ANOMALY_UPSIDE  = 1;
+Digit.ANOMALY_NONE = 0;
+Digit.ANOMALY_UPSIDE = 1;
 Digit.ANOMALY_STRANGE = 2;
 
 export class FlyingDigit {
@@ -90,7 +85,7 @@ export class FlyingDigit {
     this.endX = ex;
     this.endY = ey;
     this.startTime = startTime;
-    this.duration = duration; // ms
+    this.duration = duration;
   }
 
   updatePosition(currentTime) {
