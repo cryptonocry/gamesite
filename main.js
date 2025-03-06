@@ -9,7 +9,9 @@ import {
 } from "./game.js";
 import { showRecordsOverlay } from "./ui.js";
 
-// HTML elements
+// --------------------------------
+// HTML ELEMENTS
+// --------------------------------
 const canvas              = document.getElementById("gameCanvas");
 const ctx                 = canvas.getContext("2d");
 const fullscreenButton    = document.getElementById("fullscreenButton");
@@ -21,18 +23,20 @@ const recordsContainer    = document.getElementById("recordsContainer");
 const recordsTableContainer = document.getElementById("recordsTableContainer");
 const closeRecordsButton  = document.getElementById("closeRecordsButton");
 
-// Game states
-let gameState = "menu"; // "menu", "game", "game_over"
+// --------------------------------
+// GAME PARAMETERS
+// --------------------------------
+const START_TIME    = 60;
+const FOLDER_HEIGHT = 80;
+let gameState  = "menu"; // "menu", "game", "game_over"
 let currentPlayer = null; // { nickname, wallet, score }
-
-// Score, time, etc.
 let scoreTotal = 0;
-let timeLeft   = 60;
+let timeLeft   = START_TIME;
 let flyingDigits  = [];
 let timeAnimations = {};
 let slotsToRespawn = {};
 
-// Camera position
+// Camera
 let cameraX = canvas.width / 2;
 let cameraY = canvas.height / 2;
 let isDragging = false;
@@ -42,7 +46,9 @@ let cameraStart= { x: 0, y: 0 };
 let lastUpdateTime = performance.now();
 let lastScore = 0;
 
-// Fullscreen button
+// --------------------------------
+// FULLSCREEN BUTTON
+// --------------------------------
 fullscreenButton.addEventListener("click", () => {
   if (!document.fullscreenElement) {
     canvas.requestFullscreen();
@@ -51,7 +57,9 @@ fullscreenButton.addEventListener("click", () => {
   }
 });
 
-// Resize canvas
+// --------------------------------
+// RESIZE CANVAS
+// --------------------------------
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -59,52 +67,59 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// ----------------------
-// VALIDATION FUNCTIONS
-// ----------------------
-function validateNickname(nickname) {
-  // 1–10 chars, only letters (A–Z, a–z), digits (0–9), underscore
-  const regex = /^[A-Za-z0-9_]{1,10}$/;
-  return regex.test(nickname);
-}
+// --------------------------------
+// VALIDATION FUNCTIONS (in UI, defined in ui.js but можно здесь)
+// --------------------------------
+// (Validation для никнейма и кошелька уже реализована в предыдущем файле)
 
-function validateWallet(wallet) {
-  // exactly 62 chars, only lowercase letters (a–z) and digits (0–9)
-  const regex = /^[a-z0-9]{62}$/;
-  return regex.test(wallet);
-}
-
-// ----------------------
+// --------------------------------
 // LOGIN EVENT
-// ----------------------
+// --------------------------------
 loginButton.addEventListener("click", () => {
   const nickname = nicknameInput.value.trim();
   const wallet   = walletInput.value.trim();
-
-  // Check nickname
-  if (!validateNickname(nickname)) {
-    alert("Invalid nickname! Must be 1–10 characters (letters, digits, underscore).");
+  
+  // Проверка никнейма: 1–10 символов, только английские буквы, цифры и underscore
+  const nickRegex = /^[A-Za-z0-9_]{1,10}$/;
+  if (!nickRegex.test(nickname)) {
+    alert("Invalid nickname! Only English letters, digits, and underscores are allowed (1–10 characters).");
     return;
   }
-  // Check wallet
-  if (!validateWallet(wallet)) {
-    alert("Invalid BTC Taproot wallet! Must be exactly 62 lowercase letters/digits.");
+  
+  // Проверка кошелька: ровно 62 символа, только строчные буквы и цифры
+  const walletRegex = /^[a-z0-9]{62}$/;
+  if (!walletRegex.test(wallet)) {
+    alert("Invalid BTC Taproot wallet! It must be exactly 62 characters (lowercase letters and digits only).");
     return;
   }
-
+  
   currentPlayer = { nickname, wallet, score: 0 };
   console.log("Login successful:", currentPlayer);
   loginContainer.style.display = "none";
   startGame();
 });
 
-// Close records overlay
+// --------------------------------
+// CLOSE RECORDS OVERLAY
+// --------------------------------
 closeRecordsButton.addEventListener("click", () => {
   recordsContainer.style.display = "none";
   gameState = "menu";
 });
 
-// Canvas click: menu or game
+// --------------------------------
+// XANO API (save result) – already in api.js, called in updateGame()
+
+async function saveResult() {
+  if (currentPlayer) {
+    currentPlayer.score = scoreTotal;
+    await addParticipantToXano(currentPlayer.nickname, currentPlayer.wallet, scoreTotal);
+  }
+}
+
+// --------------------------------
+// CANVAS CLICK HANDLER
+// --------------------------------
 canvas.addEventListener("click", async (e) => {
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
@@ -135,7 +150,6 @@ canvas.addEventListener("click", async (e) => {
     }
   }
   else if (gameState === "game") {
-    // In-game clicks: BFS collecting
     const clickedKey = getClickedDigit(mouseX, mouseY, cameraX, cameraY);
     if (clickedKey) {
       const parts = clickedKey.split("_").map(Number);
@@ -144,13 +158,13 @@ canvas.addEventListener("click", async (e) => {
       const anomaly = digit.anomaly;
       const currentTime = performance.now();
 
-      // Anomaly BFS
+      // For anomaly groups (Upside or Strange)
       if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
         const group = bfsCollectAnomaly(gx, gy, anomaly);
         if (group.length >= 5) {
           const idx = (anomaly === Digit.ANOMALY_UPSIDE) ? 0 : 1;
           const fx = canvas.width / 4 + (idx * canvas.width / 2);
-          const fy = canvas.height - 80 / 2; // FOLDER_HEIGHT
+          const fy = canvas.height - FOLDER_HEIGHT / 2;
           const countDig = group.length;
           for (let key of group) {
             const d = cells[key];
@@ -161,18 +175,18 @@ canvas.addEventListener("click", async (e) => {
           }
           scoreTotal += countDig * 10;
           folderScores[idx] += countDig;
-          timeLeft += countDig;
-          const plusAnim = new TimePlusAnimation(`+${countDig} s`, 200, 20, currentTime, 2000);
+          timeLeft += 1; // Now, add only 1 second per group found
+          const plusAnim = new TimePlusAnimation(`+1 s`, 200, 20, currentTime, 2000);
           timeAnimations[Date.now()] = plusAnim;
           return;
         }
       }
 
-      // Value BFS
+      // For groups by value
       const groupVal = bfsCollectValue(gx, gy);
       if (groupVal.length >= 5) {
         const fx = canvas.width / 4;
-        const fy = canvas.height - 80 / 2;
+        const fy = canvas.height - FOLDER_HEIGHT / 2;
         const cVal = groupVal.length;
         for (let key of groupVal) {
           const d = cells[key];
@@ -183,19 +197,20 @@ canvas.addEventListener("click", async (e) => {
         }
         scoreTotal += cVal * 10;
         folderScores[0] += cVal;
-        timeLeft += cVal;
-        const plusAnim = new TimePlusAnimation(`+${cVal} s`, 200, 20, currentTime, 2000);
+        timeLeft += 1; // Add 1 second per group
+        const plusAnim = new TimePlusAnimation(`+1 s`, 200, 20, currentTime, 2000);
         timeAnimations[Date.now()] = plusAnim;
       }
     }
   }
   else if (gameState === "game_over") {
-    // Click => go to menu
     gameState = "menu";
   }
 });
 
-// Camera dragging (right mouse button)
+// --------------------------------
+// CAMERA DRAGGING (RIGHT MOUSE BUTTON)
+// --------------------------------
 canvas.addEventListener("mousedown", (e) => {
   if (e.button === 2) {
     isDragging = true;
@@ -218,7 +233,9 @@ canvas.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-// Draw menu and game over
+// --------------------------------
+// DRAWING: MENU and GAME OVER
+// --------------------------------
 function drawMenu() {
   ctx.fillStyle = "#021013";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -249,30 +266,76 @@ function drawGameOver() {
   ctx.fillText("Click to return to menu", canvas.width / 2, canvas.height - 50);
 }
 
-// Start game
-function startGame() {
-  console.log("Game started");
-  // Reset everything
-  for (const key in cells) delete cells[key];
-  generatedChunks.clear();
-  folderScores[0] = 0;
-  folderScores[1] = 0;
-  scoreTotal = 0;
-  timeLeft = 60;
-  flyingDigits = [];
-  timeAnimations = {};
-  slotsToRespawn = {};
+// --------------------------------
+// DRAWING: GAME (with background for score and timer)
+// --------------------------------
+function drawGame() {
+  ctx.fillStyle = "#021013";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const currentTime = performance.now();
 
-  // Generate chunks around (0,0)
-  for (let cx = -1; cx <= 2; cx++) {
-    for (let cy = -1; cy <= 2; cy++) {
-      generateChunk(cx, cy);
+  drawCells(ctx, cameraX, cameraY, canvas.width, canvas.height);
+
+  for (let fd of flyingDigits) {
+    fd.draw(ctx, currentTime);
+  }
+
+  // Draw folders at the bottom
+  for (let i = 0; i < 2; i++) {
+    const rectX = i * canvas.width / 2;
+    const rectY = canvas.height - FOLDER_HEIGHT;
+    ctx.fillStyle = "#7AC0D6";
+    ctx.fillRect(rectX, rectY, canvas.width / 2, FOLDER_HEIGHT);
+    ctx.strokeStyle = "#7AC0D6";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(rectX, rectY, canvas.width / 2, FOLDER_HEIGHT);
+    ctx.font = "24px Arial";
+    ctx.fillStyle = "#021013";
+    ctx.textAlign = "center";
+    ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + canvas.width / 4, rectY + FOLDER_HEIGHT / 2);
+  }
+
+  // Draw Score with background
+  ctx.save();
+  ctx.font = "24px Arial";
+  const scoreText = `Score: ${scoreTotal}`;
+  const scoreWidth = ctx.measureText(scoreText).width;
+  const scorePadding = 5;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+  ctx.fillRect(10 - scorePadding, 10, scoreWidth + scorePadding * 2, 30);
+  ctx.fillStyle = "#7AC0D6";
+  ctx.textAlign = "left";
+  ctx.fillText(scoreText, 10, 30);
+  ctx.restore();
+
+  // Draw Timer with background
+  ctx.save();
+  ctx.font = "24px Arial";
+  const timerText = `${Math.floor(timeLeft)} s.`;
+  const timerWidth = ctx.measureText(timerText).width;
+  const timerPadding = 5;
+  const timerX = canvas.width / 2;
+  const timerY = 30;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+  ctx.fillRect(timerX - timerWidth / 2 - timerPadding, timerY - 24, timerWidth + timerPadding * 2, 30);
+  ctx.fillStyle = "#7AC0D6";
+  ctx.textAlign = "center";
+  ctx.fillText(timerText, timerX, timerY);
+  ctx.restore();
+
+  // Draw any time-plus animations
+  for (const k in timeAnimations) {
+    const anim = timeAnimations[k];
+    const keep = anim.draw(ctx, currentTime);
+    if (!keep) {
+      delete timeAnimations[k];
     }
   }
-  gameState = "game";
 }
 
-// Update & draw game
+// --------------------------------
+// MAIN LOOP
+// --------------------------------
 function updateGame(dt) {
   const currentTime = performance.now();
   timeLeft -= dt / 1000;
@@ -287,10 +350,8 @@ function updateGame(dt) {
   }
   ensureVisibleChunks(cameraX, cameraY, canvas.width, canvas.height);
 
-  // Remove finished flying digits
   flyingDigits = flyingDigits.filter(fd => (currentTime - fd.startTime) < fd.duration);
 
-  // Respawn
   for (let key in slotsToRespawn) {
     if (currentTime >= slotsToRespawn[key]) {
       const parts = key.split("_").map(Number);
@@ -303,58 +364,7 @@ function updateGame(dt) {
   }
 }
 
-function drawGame() {
-  ctx.fillStyle = "#021013";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const currentTime = performance.now();
-
-  drawCells(ctx, cameraX, cameraY, canvas.width, canvas.height);
-
-  // Draw flying digits
-  for (let fd of flyingDigits) {
-    fd.draw(ctx, currentTime);
-  }
-
-  // Draw 2 "folders" at bottom
-  for (let i = 0; i < 2; i++) {
-    const rectX = i * canvas.width / 2;
-    const rectY = canvas.height - 80; // FOLDER_HEIGHT
-    ctx.fillStyle = "#7AC0D6";
-    ctx.fillRect(rectX, rectY, canvas.width / 2, 80);
-    ctx.strokeStyle = "#7AC0D6";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(rectX, rectY, canvas.width / 2, 80);
-    ctx.font = "24px Arial";
-    ctx.fillStyle = "#021013";
-    ctx.textAlign = "center";
-    ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + canvas.width / 4, rectY + 80 / 2);
-  }
-
-  // Score (top-left)
-  ctx.font = "24px Arial";
-  ctx.fillStyle = "#7AC0D6";
-  ctx.textAlign = "left";
-  ctx.fillText(`Score: ${scoreTotal}`, 10, 30);
-
-  // Timer (top-center)
-  ctx.textAlign = "center";
-  ctx.fillText(`${Math.floor(timeLeft)} s.`, canvas.width / 2, 30);
-
-  // Time-plus animations
-  for (const k in timeAnimations) {
-    const anim = timeAnimations[k];
-    const keep = anim.draw(ctx, currentTime);
-    if (!keep) {
-      delete timeAnimations[k];
-    }
-  }
-}
-
-// Main loop
 function gameLoop() {
-  // For debugging:
-  // console.log("gameLoop, state =", gameState);
-
   const currentTime = performance.now();
   const dt = currentTime - lastUpdateTime;
   lastUpdateTime = currentTime;
@@ -374,3 +384,42 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 requestAnimationFrame(gameLoop);
+
+// --------------------------------
+// START GAME FUNCTION
+// --------------------------------
+function startGame() {
+  console.log("Game started");
+  // Reset all variables
+  for (const key in cells) delete cells[key];
+  generatedChunks.clear();
+  folderScores[0] = 0;
+  folderScores[1] = 0;
+  scoreTotal = 0;
+  timeLeft = START_TIME;
+  flyingDigits = [];
+  timeAnimations = {};
+  slotsToRespawn = {};
+
+  for (let cx = -1; cx <= 2; cx++) {
+    for (let cy = -1; cy <= 2; cy++) {
+      generateChunk(cx, cy);
+    }
+  }
+  gameState = "game";
+}
+
+// --------------------------------
+// DRAW GAME OVER SCREEN
+// --------------------------------
+function drawGameOver() {
+  ctx.fillStyle = "#021013";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.font = "36px Arial";
+  ctx.fillStyle = "#7AC0D6";
+  ctx.textAlign = "center";
+  ctx.fillText("Time's up!", canvas.width / 2, canvas.height / 4);
+  ctx.fillText(`Your score: ${lastScore}`, canvas.width / 2, canvas.height / 2);
+  ctx.font = "24px Arial";
+  ctx.fillText("Click to return to menu", canvas.width / 2, canvas.height - 50);
+}
