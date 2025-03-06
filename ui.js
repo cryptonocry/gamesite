@@ -1,9 +1,8 @@
 import { fetchAllParticipantsFromXano } from "./api.js";
 
-// Mask wallet: first 4 chars, then ****, then last 4 chars
 function maskWallet(wallet) {
   if (wallet.length <= 8) return wallet;
-  return wallet.substring(0,4) + "****" + wallet.substring(wallet.length - 4);
+  return wallet.substring(0, 4) + "****" + wallet.substring(wallet.length - 4);
 }
 
 export async function showRecordsOverlay(recordsTableContainer, recordsContainer, currentPlayer) {
@@ -27,7 +26,6 @@ export async function showRecordsOverlay(recordsTableContainer, recordsContainer
   recordsTableContainer.innerHTML = html;
   recordsContainer.style.display = "block";
 
-  // Auto-scroll to current player
   setTimeout(() => {
     const row = document.getElementById("currentPlayerRow");
     if (row) {
