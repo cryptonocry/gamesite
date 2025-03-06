@@ -1,18 +1,35 @@
 "use strict";
 
-// Получаем canvas, контекст и HTML-элементы оверлеев
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-const fullscreenButton = document.getElementById("fullscreenButton");
-const loginContainer = document.getElementById("loginContainer");
-const loginButton = document.getElementById("loginButton");
-const nicknameInput = document.getElementById("nicknameInput");
-const walletInput = document.getElementById("walletInput");
-const recordsContainer = document.getElementById("recordsContainer");
-const recordsTableContainer = document.getElementById("recordsTableContainer");
-const closeRecordsButton = document.getElementById("closeRecordsButton");
+// --------------------------------------------------
+// 1) ССЫЛКИ НА ВАШИ ЭНДПОИНТЫ XANO
+// --------------------------------------------------
+const XANO_GET_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_get";
+const XANO_POST_URL = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_post";
 
-// Обработчик полного экрана
+// --------------------------------------------------
+// 2) ПОЛУЧАЕМ HTML-ЭЛЕМЕНТЫ
+// --------------------------------------------------
+const canvas              = document.getElementById("gameCanvas");
+const ctx                 = canvas.getContext("2d");
+const fullscreenButton    = document.getElementById("fullscreenButton");
+const loginContainer      = document.getElementById("loginContainer");
+const loginButton         = document.getElementById("loginButton");
+const nicknameInput       = document.getElementById("nicknameInput");
+const walletInput         = document.getElementById("walletInput");
+const recordsContainer    = document.getElementById("recordsContainer");
+const recordsTableContainer = document.getElementById("recordsTableContainer");
+const closeRecordsButton  = document.getElementById("closeRecordsButton");
+
+// --------------------------------------------------
+// 3) НАСТРОЙКА CANVAS И ПОЛНОЭКРАННОЙ КНОПКИ
+// --------------------------------------------------
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
 fullscreenButton.addEventListener("click", () => {
   if (!document.fullscreenElement) {
     canvas.requestFullscreen();
@@ -21,88 +38,65 @@ fullscreenButton.addEventListener("click", () => {
   }
 });
 
-// Подгоняем размеры canvas
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
-
-// ----------------------
-// Глобальные константы и переменные
-// ----------------------
-const CELL_SIZE = 80;
-const CHUNK_SIZE = 20;
-const START_TIME = 60; // секунд
+// --------------------------------------------------
+// 4) ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ДЛЯ ИГРЫ
+// --------------------------------------------------
+// Игровые настройки
+const CELL_SIZE    = 80;
+const CHUNK_SIZE   = 20;
+const START_TIME   = 60;  // секунд
 const FOLDER_HEIGHT = 80;
+let difficultyFactor = 1; // Теперь не меняется, всегда "сложная"
+
 // Цвета
-const COLOR_BG = "#021013";
-const COLOR_DIGITS = "#7AC0D6";
-const COLOR_FOLDERS_BG = "#7AC0D6";
+const COLOR_BG          = "#021013";
+const COLOR_DIGITS      = "#7AC0D6";
+const COLOR_FOLDERS_BG  = "#7AC0D6";
 const COLOR_FOLDERS_TXT = "#021013";
 const COLOR_SCORE_OUTLINE = "#7AC0D6";
-const COLOR_SCORE_TXT = "#7AC0D6";
-const COLOR_MENU_TXT = "#7AC0D6";
-const COLOR_MENU_SEL = "#FFFFFF";
-const COLOR_TIMER_TXT = "#7AC0D6";
-const COLOR_TIME_PLUS = "green";
+const COLOR_SCORE_TXT   = "#7AC0D6";
+const COLOR_MENU_TXT    = "#7AC0D6";
+const COLOR_MENU_SEL    = "#FFFFFF";
+const COLOR_TIMER_TXT   = "#7AC0D6";
+const COLOR_TIME_PLUS   = "green";
 
-// Поле игры
-let cells = {}; // ключ "x_y" → объект Digit
+// Состояния игры
+let gameState = "menu"; // Возможные: "menu", "game", "game_over"
+
+// Параметры игры
+let cells = {};                // { "x_y": Digit }
 let generatedChunks = new Set();
-let folderScores = [0, 0];
+let folderScores = [0, 0];     // Счёт в двух "папках": перевёрнутые / иная анимация
 const folderNames = ["Перевёрнутые", "Иная анимация"];
 
-// Для хранения глобальных результатов используем localStorage с ключом "globalRecords"
-// Каждый результат – объект: { nickname, wallet, score }
-function getGlobalRecords() {
-  let rec = localStorage.getItem("globalRecords");
-  return rec ? JSON.parse(rec) : [];
-}
-function setGlobalRecords(records) {
-  localStorage.setItem("globalRecords", JSON.stringify(records));
-}
-function addGlobalRecord(record) {
-  let records = getGlobalRecords();
-  records.push(record);
-  // Сортировка по убыванию очков
-  records.sort((a, b) => b.score - a.score);
-  setGlobalRecords(records);
-}
+// Текущий игрок (будет заполнен при входе)
+let currentPlayer = null; // { nickname, wallet, score }
 
-// Фактор сложности – убираем выбор, игра всегда в стандартном (сложном) режиме
-let difficultyFactor = 1;
-
-// Состояния игры: "menu", "login", "game", "game_over"
-let gameState = "menu";
-
-// Для меню (canvas‑отрисовка)
-let menuOptions = ["Начать игру", "Рекорды", "Выход"];
-
-// Счёт, таймер и пр.
+// Счёт и таймер
 let scoreTotal = 0;
-let timeLeft = START_TIME;
-let flyingDigits = [];
+let timeLeft   = START_TIME;
+
+// Прочие массивы и объекты
+let flyingDigits  = [];
 let timeAnimations = [];
 let slotsToRespawn = {};
 
 // Положение камеры
-let cameraX = canvas.width / 2, cameraY = canvas.height / 2;
+let cameraX = canvas.width / 2;
+let cameraY = canvas.height / 2;
 
-// Для перетаскивания камеры правой кнопкой мыши
+// Перетаскивание камеры (правая кнопка мыши)
 let isDragging = false;
-let dragStart = { x: 0, y: 0 };
-let cameraStart = { x: 0, y: 0 };
+let dragStart  = { x: 0, y: 0 };
+let cameraStart= { x: 0, y: 0 };
 
+// Для игрового цикла
 let lastUpdateTime = performance.now();
+let lastScore = 0; // Запоминаем счёт для экрана game_over
 
-// Текущий игрок
-let currentPlayer = null; // { nickname, wallet }
-
-// ----------------------
-// Классы игры (Digit, FlyingDigit, TimePlusAnimation)
-// ----------------------
+// --------------------------------------------------
+// 5) КЛАССЫ ДЛЯ ЦИФР, АНИМАЦИИ И Т.Д.
+// --------------------------------------------------
 class Digit {
   constructor(gx, gy, value, anomaly, spawnTime = performance.now()) {
     this.gx = gx;
@@ -110,18 +104,24 @@ class Digit {
     this.value = value;
     this.anomaly = anomaly; // 0: нет, 1: перевёрнутая, 2: странная
     this.spawnTime = spawnTime;
+
+    // Базовые настройки анимации
     this.baseAmplitude = 5.0;
     this.baseSpeed = 2.0;
     if (this.anomaly === Digit.ANOMALY_STRANGE) {
       this.baseAmplitude *= 2.0;
       this.baseSpeed *= 1.6;
     }
-    // Случайный фазовый сдвиг в диапазоне [0, 2π]
+
+    // Случайный фазовый сдвиг (чтобы анимация у каждой цифры была своя)
     this.phaseOffset = Math.random() * Math.PI * 2;
-    this.appearDelay = Math.random() * 1000; // мс
+
+    // Анимация появления
+    this.appearDelay = Math.random() * 1000;   // мс
     this.appearDuration = 300 + Math.random() * 400; // мс
     this.appearStart = null;
   }
+
   screenPosition(cameraX, cameraY, currentTime) {
     let baseX = this.gx * CELL_SIZE + cameraX;
     let baseY = this.gy * CELL_SIZE + cameraY;
@@ -129,6 +129,7 @@ class Digit {
     let angle = this.baseSpeed * dt + this.phaseOffset;
     let dx = this.baseAmplitude * Math.cos(angle);
     let dy = this.baseAmplitude * Math.sin(angle);
+
     let age = currentTime - this.spawnTime;
     if (age < 1000) {
       let factor = age / 1000;
@@ -138,6 +139,7 @@ class Digit {
     if (this.appearStart === null && age >= this.appearDelay) {
       this.appearStart = currentTime;
     }
+
     let scale = 1.0;
     let alpha = 1.0;
     if (this.appearStart !== null) {
@@ -145,15 +147,20 @@ class Digit {
       scale = progress;
       alpha = progress;
     }
+
     return { x: baseX + dx, y: baseY + dy, scale: scale, alpha: alpha };
   }
+
   draw(ctx, cameraX, cameraY, currentTime) {
     let pos = this.screenPosition(cameraX, cameraY, currentTime);
     let finalScale = pos.scale;
     if (this.anomaly === Digit.ANOMALY_STRANGE) {
-      let pulsation = 0.2 * Math.sin(this.baseSpeed * 0.7 * ((currentTime - this.spawnTime) / 1000) + this.phaseOffset);
+      let pulsation = 0.2 * Math.sin(
+        this.baseSpeed * 0.7 * ((currentTime - this.spawnTime) / 1000) + this.phaseOffset
+      );
       finalScale *= (1.0 + pulsation);
     }
+
     ctx.save();
     ctx.globalAlpha = pos.alpha;
     ctx.font = `${24 * finalScale}px Arial`;
@@ -170,8 +177,8 @@ class Digit {
     ctx.restore();
   }
 }
-Digit.ANOMALY_NONE = 0;
-Digit.ANOMALY_UPSIDE = 1;
+Digit.ANOMALY_NONE    = 0;
+Digit.ANOMALY_UPSIDE  = 1;
 Digit.ANOMALY_STRANGE = 2;
 
 class FlyingDigit {
@@ -184,6 +191,7 @@ class FlyingDigit {
     this.startTime = startTime;
     this.duration = duration; // мс
   }
+
   updatePosition(currentTime) {
     let t = (currentTime - this.startTime) / this.duration;
     t = Math.max(0, Math.min(t, 1));
@@ -191,6 +199,7 @@ class FlyingDigit {
     let y = this.startY + (this.endY - this.startY) * t;
     return { x, y };
   }
+
   draw(ctx, currentTime) {
     let pos = this.updatePosition(currentTime);
     ctx.save();
@@ -215,8 +224,9 @@ class TimePlusAnimation {
     this.startX = startX;
     this.startY = startY;
     this.startTime = startTime;
-    this.duration = duration; // мс
+    this.duration = duration;
   }
+
   draw(ctx, currentTime) {
     let t = currentTime - this.startTime;
     if (t > this.duration) return false;
@@ -232,9 +242,9 @@ class TimePlusAnimation {
   }
 }
 
-// ----------------------
-// Функции генерации игрового поля (чанков)
-// ----------------------
+// --------------------------------------------------
+// 6) ЛОГИКА РАБОТЫ С ЧАНКАМИ, ГЕНЕРАЦИЕЙ ЦИФР
+// --------------------------------------------------
 function getChunkCoords(cx, cy) {
   let coords = [];
   let baseX = cx * CHUNK_SIZE;
@@ -249,6 +259,7 @@ function getChunkCoords(cx, cy) {
 
 function generateClusterInChunk(cx, cy, anomaly, minSize = 5, maxSize = 9) {
   let allCoords = getChunkCoords(cx, cy);
+  // Перемешиваем
   for (let i = allCoords.length - 1; i > 0; i--) {
     let j = Math.floor(Math.random() * (i + 1));
     [allCoords[i], allCoords[j]] = [allCoords[j], allCoords[i]];
@@ -298,10 +309,10 @@ function generateChunk(cx, cy) {
     let digit = new Digit(coord.x, coord.y, value, Digit.ANOMALY_NONE);
     cells[key] = digit;
   }
-  // Гарантированное создание кластеров для обеих аномалий
+  // Кластеры для аномалий
   generateClusterInChunk(cx, cy, Digit.ANOMALY_UPSIDE);
   generateClusterInChunk(cx, cy, Digit.ANOMALY_STRANGE);
-  // Дополнительные случайные кластеры
+  // Дополнительные кластеры
   let numClusters = Math.floor((2 * difficultyFactor) - 2);
   for (let i = 0; i < numClusters; i++) {
     let anomaly = (Math.random() < 0.5) ? Digit.ANOMALY_UPSIDE : Digit.ANOMALY_STRANGE;
@@ -310,14 +321,16 @@ function generateChunk(cx, cy) {
 }
 
 function ensureVisibleChunks() {
-  let leftWorld = -cameraX / CELL_SIZE;
-  let topWorld = -cameraY / CELL_SIZE;
-  let rightWorld = (canvas.width - cameraX) / CELL_SIZE;
+  let leftWorld   = -cameraX / CELL_SIZE;
+  let topWorld    = -cameraY / CELL_SIZE;
+  let rightWorld  = (canvas.width  - cameraX) / CELL_SIZE;
   let bottomWorld = (canvas.height - cameraY) / CELL_SIZE;
-  let cx_min = Math.floor(leftWorld / CHUNK_SIZE) - 1;
+
+  let cx_min = Math.floor(leftWorld  / CHUNK_SIZE) - 1;
   let cx_max = Math.floor(rightWorld / CHUNK_SIZE) + 1;
-  let cy_min = Math.floor(topWorld / CHUNK_SIZE) - 1;
-  let cy_max = Math.floor(bottomWorld / CHUNK_SIZE) + 1;
+  let cy_min = Math.floor(topWorld   / CHUNK_SIZE) - 1;
+  let cy_max = Math.floor(bottomWorld/ CHUNK_SIZE) + 1;
+
   for (let cx = cx_min; cx <= cx_max; cx++) {
     for (let cy = cy_min; cy <= cy_max; cy++) {
       generateChunk(cx, cy);
@@ -329,16 +342,17 @@ function drawCells() {
   let currentTime = performance.now();
   for (let key in cells) {
     let pos = cells[key].screenPosition(cameraX, cameraY, currentTime);
-    if (pos.x < -CELL_SIZE || pos.x > canvas.width + CELL_SIZE ||
-        pos.y < -CELL_SIZE || pos.y > canvas.height + CELL_SIZE)
+    if (pos.x < -CELL_SIZE || pos.x > canvas.width  + CELL_SIZE ||
+        pos.y < -CELL_SIZE || pos.y > canvas.height + CELL_SIZE) {
       continue;
+    }
     cells[key].draw(ctx, cameraX, cameraY, currentTime);
   }
 }
 
-// ----------------------
-// BFS для сбора групп цифр
-// ----------------------
+// --------------------------------------------------
+// 7) BFS ДЛЯ СБОРА ГРУПП
+// --------------------------------------------------
 function bfsCollectValue(sx, sy) {
   let key = `${sx}_${sy}`;
   if (!cells[key]) return [];
@@ -402,7 +416,7 @@ function getClickedDigit(mouseX, mouseY) {
     let pos = cells[key].screenPosition(cameraX, cameraY, currentTime);
     let dx = mouseX - pos.x;
     let dy = mouseY - pos.y;
-    let dist = Math.sqrt(dx * dx + dy * dy);
+    let dist = Math.sqrt(dx*dx + dy*dy);
     if (dist < 20 && dist < closestDist) {
       closestKey = key;
       closestDist = dist;
@@ -411,11 +425,11 @@ function getClickedDigit(mouseX, mouseY) {
   return closestKey;
 }
 
-// ----------------------
-// Обработка ввода
-// ----------------------
+// --------------------------------------------------
+// 8) ОБРАБОТЧИКИ КЛИКОВ: ПЕРЕТАСКИВАНИЕ КАМЕРЫ, МЕНЮ, ИГРА
+// --------------------------------------------------
 
-// Перетаскивание камеры правой кнопкой мыши
+// Перетаскивание камеры правой кнопкой
 canvas.addEventListener("mousedown", (e) => {
   if (e.button === 2) {
     isDragging = true;
@@ -438,13 +452,40 @@ canvas.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-// Обработка кликов в игре и меню
+// Клик левой кнопкой: меню / игра
 canvas.addEventListener("click", (e) => {
   let rect = canvas.getBoundingClientRect();
   let mouseX = e.clientX - rect.left;
   let mouseY = e.clientY - rect.top;
-  
-  if (gameState === "game") {
+
+  if (gameState === "menu") {
+    // Рисуем пункты: "Начать игру", "Рекорды", "Выход"
+    let menuOptions = ["Начать игру", "Рекорды", "Выход"];
+    let optionAreaHeight = 40;
+    let baseY = canvas.height / 2 - (menuOptions.length * optionAreaHeight) / 2;
+    for (let i = 0; i < menuOptions.length; i++) {
+      let itemY = baseY + i * optionAreaHeight;
+      if (mouseX >= canvas.width / 2 - 150 && mouseX <= canvas.width / 2 + 150 &&
+          mouseY >= itemY - optionAreaHeight / 2 && mouseY <= itemY + optionAreaHeight / 2) {
+        let option = menuOptions[i];
+        if (option === "Начать игру") {
+          // Если игрок не залогинен (не ввёл ник и кошелёк), показываем экран входа
+          if (!currentPlayer) {
+            loginContainer.style.display = "block";
+          } else {
+            startGame();
+          }
+        } else if (option === "Рекорды") {
+          showRecordsOverlay();
+        } else if (option === "Выход") {
+          location.reload();
+        }
+        return;
+      }
+    }
+  }
+  else if (gameState === "game") {
+    // Ищем, не кликнули ли мы по цифре (сбор групп)
     let clickedKey = getClickedDigit(mouseX, mouseY);
     if (clickedKey) {
       let parts = clickedKey.split("_").map(Number);
@@ -452,6 +493,8 @@ canvas.addEventListener("click", (e) => {
       let digit = cells[clickedKey];
       let anomaly = digit.anomaly;
       let currentTime = performance.now();
+
+      // Сбор групп по аномалии
       if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
         let group = bfsCollectAnomaly(gx, gy, anomaly);
         if (group.length >= 5) {
@@ -473,6 +516,7 @@ canvas.addEventListener("click", (e) => {
           return;
         }
       }
+      // Сбор групп по значению
       let groupVal = bfsCollectValue(gx, gy);
       if (groupVal.length >= 5) {
         let fx = canvas.width / 4;
@@ -491,41 +535,23 @@ canvas.addEventListener("click", (e) => {
         timeAnimations.push(new TimePlusAnimation(`+${cVal} s`, 200, 20, currentTime, 2000));
       }
     }
-  } else if (gameState === "menu") {
-    // Меню с вариантами: "Начать игру", "Рекорды", "Выход"
-    let optionAreaHeight = 40;
-    let baseY = canvas.height / 2 - (menuOptions.length * optionAreaHeight) / 2;
-    for (let i = 0; i < menuOptions.length; i++) {
-      let itemY = baseY + i * optionAreaHeight;
-      if (mouseX >= canvas.width / 2 - 150 && mouseX <= canvas.width / 2 + 150 &&
-          mouseY >= itemY - optionAreaHeight / 2 && mouseY <= itemY + optionAreaHeight / 2) {
-        let option = menuOptions[i];
-        if (option === "Начать игру") {
-          // Если игрок ещё не ввёл данные, показать экран входа
-          if (!currentPlayer) {
-            loginContainer.style.display = "block";
-          } else {
-            startGame();
-          }
-        } else if (option === "Рекорды") {
-          showRecordsOverlay();
-        } else if (option === "Выход") {
-          location.reload();
-        }
-        return;
-      }
-    }
-  } else if (gameState === "game_over") {
+  }
+  else if (gameState === "game_over") {
+    // Клик → возвращаемся в меню
     gameState = "menu";
   }
 });
 
-// Обработка кнопки входа
+// --------------------------------------------------
+// 9) ЛОГИКА ВХОДА (LOGIN) И РЕЙТИНГА (RECORDS)
+// --------------------------------------------------
+
+// При нажатии кнопки входа (nickname + wallet)
 loginButton.addEventListener("click", () => {
   let nickname = nicknameInput.value.trim();
-  let wallet = walletInput.value.trim();
+  let wallet   = walletInput.value.trim();
   if (!nickname || !wallet) {
-    alert("Заполните оба поля");
+    alert("Заполните оба поля!");
     return;
   }
   currentPlayer = { nickname, wallet, score: 0 };
@@ -533,14 +559,84 @@ loginButton.addEventListener("click", () => {
   startGame();
 });
 
-// Обработка кнопки закрытия рейтинга
+// Закрыть рейтинг
 closeRecordsButton.addEventListener("click", () => {
   recordsContainer.style.display = "none";
   gameState = "menu";
 });
 
-// ----------------------
-// Функции отрисовки экранов меню и Game Over (отрисовка на canvas)
+// Запросы к Xano
+async function addParticipantToXano(nickname, wallet, score) {
+  try {
+    let body = { nickname, wallet, score };
+    let response = await fetch(XANO_POST_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    let data = await response.json();
+    console.log("Запись добавлена в Xano:", data);
+  } catch(e) {
+    console.error("Ошибка при отправке данных в Xano:", e);
+  }
+}
+
+async function fetchAllParticipantsFromXano() {
+  try {
+    let response = await fetch(XANO_GET_URL);
+    let data = await response.json();
+    console.log("Список из Xano:", data);
+    return data; // Массив объектов [{id, nickname, wallet, score}, ...]
+  } catch(e) {
+    console.error("Ошибка при получении данных из Xano:", e);
+    return [];
+  }
+}
+
+// Урезаем кошелёк: первые 4 символа, ****, последние 4
+function maskWallet(wallet) {
+  if (wallet.length <= 8) return wallet;
+  return wallet.substring(0,4) + "****" + wallet.substring(wallet.length - 4);
+}
+
+// Показать оверлей рейтинга
+async function showRecordsOverlay() {
+  let records = await fetchAllParticipantsFromXano();
+  // Формируем таблицу
+  let html = "<table><tr><th>Никнейм</th><th>Биткойн кошелек</th><th>Счёт</th></tr>";
+  let currentPlayerIndex = -1;
+
+  records.forEach((rec, index) => {
+    let shortWallet = maskWallet(rec.wallet || "");
+    let rowId = "";
+    // Если совпадает с текущим игроком
+    if (currentPlayer && rec.nickname === currentPlayer.nickname && rec.wallet === currentPlayer.wallet) {
+      rowId = " id='currentPlayerRow'";
+      currentPlayerIndex = index;
+    }
+    html += `<tr${rowId}>
+               <td>${rec.nickname}</td>
+               <td>${shortWallet}</td>
+               <td>${rec.score}</td>
+             </tr>`;
+  });
+  html += "</table>";
+
+  recordsTableContainer.innerHTML = html;
+  recordsContainer.style.display = "block";
+
+  // Скроллим к текущему игроку
+  setTimeout(() => {
+    let row = document.getElementById("currentPlayerRow");
+    if (row) {
+      row.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, 100);
+}
+
+// --------------------------------------------------
+// 10) МЕНЮ И ЭКРАН GAME OVER (ОТРИСОВКА НА CANVAS)
+// --------------------------------------------------
 function drawMenu() {
   ctx.fillStyle = COLOR_BG;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -548,6 +644,8 @@ function drawMenu() {
   ctx.fillStyle = COLOR_MENU_TXT;
   ctx.textAlign = "center";
   ctx.fillText("Главное меню", canvas.width / 2, canvas.height / 4);
+
+  let menuOptions = ["Начать игру", "Рекорды", "Выход"];
   let optionAreaHeight = 40;
   let baseY = canvas.height / 2 - (menuOptions.length * optionAreaHeight) / 2;
   for (let i = 0; i < menuOptions.length; i++) {
@@ -557,7 +655,6 @@ function drawMenu() {
   }
 }
 
-let lastScore = 0;
 function drawGameOver() {
   ctx.fillStyle = COLOR_BG;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -570,20 +667,21 @@ function drawGameOver() {
   ctx.fillText("Клик - в меню", canvas.width / 2, canvas.height - 50);
 }
 
-// ----------------------
-// Функции запуска игры, обновления и отрисовки игрового процесса
-// ----------------------
+// --------------------------------------------------
+// 11) ЛОГИКА СТАРТА ИГРЫ, ОБНОВЛЕНИЯ И ОТРИСОВКИ
+// --------------------------------------------------
 function startGame() {
-  // Сброс переменных
+  // Сбрасываем все переменные
   cells = {};
   generatedChunks.clear();
   folderScores = [0, 0];
   scoreTotal = 0;
-  timeLeft = START_TIME;
+  timeLeft   = START_TIME;
   flyingDigits = [];
   timeAnimations = [];
   slotsToRespawn = {};
-  // Инициализируем несколько чанков вокруг (0,0)
+
+  // Генерируем несколько чанков вокруг (0,0)
   for (let cx = -1; cx <= 2; cx++) {
     for (let cy = -1; cy <= 2; cy++) {
       generateChunk(cx, cy);
@@ -598,15 +696,17 @@ function updateGame(dt) {
   if (timeLeft <= 0) {
     gameState = "game_over";
     lastScore = scoreTotal;
-    // Обновляем запись текущего игрока
+    // Отправляем результат в Xano
     if (currentPlayer) {
       currentPlayer.score = scoreTotal;
-      addGlobalRecord(currentPlayer);
+      addParticipantToXano(currentPlayer.nickname, currentPlayer.wallet, scoreTotal);
     }
     return;
   }
   ensureVisibleChunks();
+  // Убираем "улетающие цифры", если время анимации вышло
   flyingDigits = flyingDigits.filter(fd => (currentTime - fd.startTime) < fd.duration);
+  // Респавн
   for (let key in slotsToRespawn) {
     if (currentTime >= slotsToRespawn[key]) {
       let parts = key.split("_").map(Number);
@@ -622,11 +722,15 @@ function drawGame() {
   ctx.fillStyle = COLOR_BG;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   let currentTime = performance.now();
+
   drawCells();
+
+  // Рисуем летающие цифры
   for (let fd of flyingDigits) {
     fd.draw(ctx, currentTime);
   }
-  // Рисуем области папок
+
+  // Папки (2 штуки)
   for (let i = 0; i < 2; i++) {
     let rectX = i * canvas.width / 2;
     let rectY = canvas.height - FOLDER_HEIGHT;
@@ -640,23 +744,30 @@ function drawGame() {
     ctx.textAlign = "center";
     ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + canvas.width / 4, rectY + FOLDER_HEIGHT / 2);
   }
-  let scoreStr = `Счёт: ${scoreTotal}`;
+
+  // Счёт
   ctx.font = "24px Arial";
   ctx.fillStyle = COLOR_SCORE_TXT;
   ctx.textAlign = "left";
-  ctx.fillText(scoreStr, 10, 30);
-  let timeStr = `${Math.floor(timeLeft)} с.`;
-  ctx.font = "24px Arial";
-  ctx.fillStyle = COLOR_TIMER_TXT;
+  ctx.fillText(`Счёт: ${scoreTotal}`, 10, 30);
+
+  // Таймер
   ctx.textAlign = "center";
-  ctx.fillText(timeStr, canvas.width / 2, 30);
+  ctx.fillStyle = COLOR_TIMER_TXT;
+  ctx.fillText(`${Math.floor(timeLeft)} с.`, canvas.width / 2, 30);
+
+  // Анимации "+N s"
   timeAnimations = timeAnimations.filter(anim => anim.draw(ctx, currentTime));
 }
 
+// --------------------------------------------------
+// 12) ГЛАВНЫЙ ЦИКЛ (gameLoop)
+// --------------------------------------------------
 function gameLoop() {
   let currentTime = performance.now();
   let dt = currentTime - lastUpdateTime;
   lastUpdateTime = currentTime;
+
   switch (gameState) {
     case "menu":
       drawMenu();
@@ -669,40 +780,7 @@ function gameLoop() {
       drawGameOver();
       break;
   }
+
   requestAnimationFrame(gameLoop);
 }
 requestAnimationFrame(gameLoop);
-
-// ----------------------
-// Функции отображения рейтинга (Records)
-// ----------------------
-
-// Форматирует биткойн-кошелек: первые 4 символа, затем ****, затем последние 4 символа
-function maskWallet(wallet) {
-  if (wallet.length <= 8) return wallet;
-  return wallet.substring(0, 4) + "****" + wallet.substring(wallet.length - 4);
-}
-
-function showRecordsOverlay() {
-  let records = getGlobalRecords();
-  // Создаем HTML таблицу
-  let html = "<table><tr><th>Никнейм</th><th>Биткойн кошелек</th><th>Счёт</th></tr>";
-  let currentPlayerIndex = -1;
-  records.forEach((rec, index) => {
-    // Если это текущий игрок, добавляем id для скроллинга
-    let rowId = (currentPlayer && rec.nickname === currentPlayer.nickname && rec.wallet === currentPlayer.wallet) ? " id='currentPlayerRow'" : "";
-    if (rowId) currentPlayerIndex = index;
-    html += `<tr${rowId}><td>${rec.nickname}</td><td>${rec.wallet.substring(0,4)}****${rec.wallet.substring(rec.wallet.length-4)}</td><td>${rec.score}</td></tr>`;
-  });
-  html += "</table>";
-  recordsTableContainer.innerHTML = html;
-  recordsContainer.style.display = "block";
-  gameState = "menu";
-  // Автопрокрутка к строке текущего игрока, если она есть
-  setTimeout(() => {
-    let row = document.getElementById("currentPlayerRow");
-    if (row) {
-      row.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, 100);
-}
