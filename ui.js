@@ -1,10 +1,12 @@
 import { fetchAllParticipantsFromXano } from "./api.js";
 
-export function maskWallet(wallet) {
+// Сокращаем кошелёк: первые 4 символа, ****, последние 4 символа
+function maskWallet(wallet) {
   if (wallet.length <= 8) return wallet;
   return wallet.substring(0,4) + "****" + wallet.substring(wallet.length - 4);
 }
 
+// Отображаем оверлей рейтинга
 export async function showRecordsOverlay(recordsTableContainer, recordsContainer, currentPlayer) {
   const records = await fetchAllParticipantsFromXano();
   let html = "<table><tr><th>Никнейм</th><th>Биткойн кошелек</th><th>Счёт</th></tr>";
@@ -25,6 +27,8 @@ export async function showRecordsOverlay(recordsTableContainer, recordsContainer
   html += "</table>";
   recordsTableContainer.innerHTML = html;
   recordsContainer.style.display = "block";
+
+  // Автопрокрутка к текущему игроку
   setTimeout(() => {
     const row = document.getElementById("currentPlayerRow");
     if (row) {
