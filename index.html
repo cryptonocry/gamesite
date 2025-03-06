@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Игра: аномалии</title>
+  <title>Anomalies Game</title>
   <style>
     html, body {
       margin: 0;
@@ -16,7 +16,7 @@
     canvas {
       display: block;
     }
-    /* Кнопка полного экрана в правом верхнем углу */
+    /* Fullscreen button in the top-right corner */
     #fullscreenButton {
       position: absolute;
       top: 10px;
@@ -28,7 +28,7 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    /* Экран входа */
+    /* Login overlay */
     #loginContainer {
       position: absolute;
       top: 0; left: 0;
@@ -62,7 +62,7 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    /* Экран рейтинга */
+    /* Records overlay */
     #recordsContainer {
       position: absolute;
       top: 0; left: 0;
@@ -104,32 +104,32 @@
   </style>
 </head>
 <body>
-  <!-- Кнопка полного экрана -->
-  <button id="fullscreenButton">Полный экран</button>
+  <!-- Fullscreen button -->
+  <button id="fullscreenButton">Fullscreen</button>
   
-  <!-- Оверлей входа (никнейм + кошелёк) -->
+  <!-- Login overlay (Nickname + BTC Taproot wallet) -->
   <div id="loginContainer">
     <div id="loginContent">
-      <h2>Вход в игру</h2>
-      <input id="nicknameInput" type="text" placeholder="Никнейм">
-      <input id="walletInput"   type="text" placeholder="Биткойн кошелек">
-      <button id="loginButton">Начать игру</button>
+      <h2>Enter the game</h2>
+      <input id="nicknameInput" type="text" placeholder="Nickname (1-10 chars)">
+      <input id="walletInput"   type="text" placeholder="BTC Taproot wallet (62 chars)">
+      <button id="loginButton">Start Game</button>
     </div>
   </div>
   
-  <!-- Оверлей рейтинга -->
+  <!-- Records overlay -->
   <div id="recordsContainer">
     <div id="recordsContent">
-      <h2>Рейтинг</h2>
+      <h2>Ranking</h2>
       <div id="recordsTableContainer"></div>
-      <button id="closeRecordsButton">Закрыть</button>
+      <button id="closeRecordsButton">Close</button>
     </div>
   </div>
   
-  <!-- Canvas -->
+  <!-- Canvas for the game -->
   <canvas id="gameCanvas"></canvas>
   
-  <!-- Подключаем главный файл (ES-модуль) -->
+  <!-- Main script as an ES module -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
