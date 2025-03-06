@@ -36,7 +36,7 @@ let flyingDigits  = [];
 let timeAnimations = {};
 let slotsToRespawn = {};
 
-// Camera
+// Camera parameters
 let cameraX = canvas.width / 2;
 let cameraY = canvas.height / 2;
 let isDragging = false;
@@ -68,31 +68,26 @@ window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
 // --------------------------------
-// VALIDATION FUNCTIONS (in UI, defined in ui.js but можно здесь)
-// --------------------------------
-// (Validation для никнейма и кошелька уже реализована в предыдущем файле)
-
-// --------------------------------
-// LOGIN EVENT
+// LOGIN EVENT (with validation)
 // --------------------------------
 loginButton.addEventListener("click", () => {
   const nickname = nicknameInput.value.trim();
   const wallet   = walletInput.value.trim();
-  
-  // Проверка никнейма: 1–10 символов, только английские буквы, цифры и underscore
+
+  // Validate nickname: 1–10 characters, letters, digits, underscore only
   const nickRegex = /^[A-Za-z0-9_]{1,10}$/;
   if (!nickRegex.test(nickname)) {
     alert("Invalid nickname! Only English letters, digits, and underscores are allowed (1–10 characters).");
     return;
   }
-  
-  // Проверка кошелька: ровно 62 символа, только строчные буквы и цифры
+
+  // Validate wallet: exactly 62 characters, lowercase letters and digits only
   const walletRegex = /^[a-z0-9]{62}$/;
   if (!walletRegex.test(wallet)) {
     alert("Invalid BTC Taproot wallet! It must be exactly 62 characters (lowercase letters and digits only).");
     return;
   }
-  
+
   currentPlayer = { nickname, wallet, score: 0 };
   console.log("Login successful:", currentPlayer);
   loginContainer.style.display = "none";
@@ -106,16 +101,6 @@ closeRecordsButton.addEventListener("click", () => {
   recordsContainer.style.display = "none";
   gameState = "menu";
 });
-
-// --------------------------------
-// XANO API (save result) – already in api.js, called in updateGame()
-
-async function saveResult() {
-  if (currentPlayer) {
-    currentPlayer.score = scoreTotal;
-    await addParticipantToXano(currentPlayer.nickname, currentPlayer.wallet, scoreTotal);
-  }
-}
 
 // --------------------------------
 // CANVAS CLICK HANDLER
@@ -158,7 +143,7 @@ canvas.addEventListener("click", async (e) => {
       const anomaly = digit.anomaly;
       const currentTime = performance.now();
 
-      // For anomaly groups (Upside or Strange)
+      // Process anomaly groups
       if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
         const group = bfsCollectAnomaly(gx, gy, anomaly);
         if (group.length >= 5) {
@@ -175,14 +160,14 @@ canvas.addEventListener("click", async (e) => {
           }
           scoreTotal += countDig * 10;
           folderScores[idx] += countDig;
-          timeLeft += 1; // Now, add only 1 second per group found
+          timeLeft += 1; // Add exactly 1 second per group
           const plusAnim = new TimePlusAnimation(`+1 s`, 200, 20, currentTime, 2000);
           timeAnimations[Date.now()] = plusAnim;
           return;
         }
       }
 
-      // For groups by value
+      // Process groups by value
       const groupVal = bfsCollectValue(gx, gy);
       if (groupVal.length >= 5) {
         const fx = canvas.width / 4;
@@ -267,7 +252,7 @@ function drawGameOver() {
 }
 
 // --------------------------------
-// DRAWING: GAME (with background for score and timer)
+// DRAWING: GAME (with backgrounds for score and timer)
 // --------------------------------
 function drawGame() {
   ctx.fillStyle = "#021013";
@@ -323,7 +308,7 @@ function drawGame() {
   ctx.fillText(timerText, timerX, timerY);
   ctx.restore();
 
-  // Draw any time-plus animations
+  // Draw time-plus animations
   for (const k in timeAnimations) {
     const anim = timeAnimations[k];
     const keep = anim.draw(ctx, currentTime);
@@ -334,7 +319,7 @@ function drawGame() {
 }
 
 // --------------------------------
-// MAIN LOOP
+// UPDATE GAME (logic)
 // --------------------------------
 function updateGame(dt) {
   const currentTime = performance.now();
@@ -364,10 +349,18 @@ function updateGame(dt) {
   }
 }
 
+// --------------------------------
+// MAIN LOOP
+// --------------------------------
 function gameLoop() {
   const currentTime = performance.now();
   const dt = currentTime - lastUpdateTime;
   lastUpdateTime = currentTime;
+
+  // Debug: log gameState every 5 seconds (optional)
+  // if (Math.floor(currentTime / 5000) !== Math.floor((currentTime - dt) / 5000)) {
+  //   console.log("Game state:", gameState);
+  // }
 
   switch (gameState) {
     case "menu":
@@ -407,19 +400,4 @@ function startGame() {
     }
   }
   gameState = "game";
-}
-
-// --------------------------------
-// DRAW GAME OVER SCREEN
-// --------------------------------
-function drawGameOver() {
-  ctx.fillStyle = "#021013";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.font = "36px Arial";
-  ctx.fillStyle = "#7AC0D6";
-  ctx.textAlign = "center";
-  ctx.fillText("Time's up!", canvas.width / 2, canvas.height / 4);
-  ctx.fillText(`Your score: ${lastScore}`, canvas.width / 2, canvas.height / 2);
-  ctx.font = "24px Arial";
-  ctx.fillText("Click to return to menu", canvas.width / 2, canvas.height - 50);
 }
