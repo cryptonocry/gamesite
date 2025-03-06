@@ -15,9 +15,22 @@
     canvas {
       display: block;
     }
+    /* Кнопка полного экрана в правом верхнем углу */
+    #fullscreenButton {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 100;
+      padding: 10px 15px;
+      background: #7AC0D6;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
+  <button id="fullscreenButton">Полный экран</button>
   <canvas id="gameCanvas"></canvas>
   <script src="main.js"></script>
 </body>
