@@ -3,7 +3,7 @@ export class Digit {
     this.gx = gx;
     this.gy = gy;
     this.value = value;
-    this.anomaly = anomaly; // 0: нет, 1: перевёрнутая, 2: странная
+    this.anomaly = anomaly; // 0: none, 1: upside, 2: strange
     this.spawnTime = spawnTime;
 
     this.baseAmplitude = 5.0;
@@ -12,11 +12,8 @@ export class Digit {
       this.baseAmplitude *= 2.0;
       this.baseSpeed *= 1.6;
     }
-
-    // Случайный фазовый сдвиг
+    // Random phase offset
     this.phaseOffset = Math.random() * Math.PI * 2;
-
-    // Анимация появления
     this.appearDelay = Math.random() * 1000;
     this.appearDuration = 300 + Math.random() * 400;
     this.appearStart = null;
@@ -38,7 +35,6 @@ export class Digit {
       dx *= factor;
       dy *= factor;
     }
-
     if (this.appearStart === null && age >= this.appearDelay) {
       this.appearStart = currentTime;
     }
@@ -94,7 +90,7 @@ export class FlyingDigit {
     this.endX = ex;
     this.endY = ey;
     this.startTime = startTime;
-    this.duration = duration; // мс
+    this.duration = duration; // ms
   }
 
   updatePosition(currentTime) {
