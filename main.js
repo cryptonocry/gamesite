@@ -1,8 +1,20 @@
-// Получаем canvas и контекст рисования
+"use strict";
+
+// Получаем canvas, контекст и кнопку полного экрана
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+const fullscreenButton = document.getElementById("fullscreenButton");
 
-// Изменяем размеры canvas под окно
+// Обработчик для переключения полноэкранного режима
+fullscreenButton.addEventListener("click", () => {
+  if (!document.fullscreenElement) {
+    canvas.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+});
+
+// Подгоняем размеры canvas под окно
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -31,42 +43,41 @@ const COLOR_TIMER_OUTLINE = "#7AC0D6";
 const COLOR_TIMER_TXT = "#7AC0D6";
 const COLOR_TIME_PLUS = "green";
 
-// Глобальные переменные для игрового поля
-let cells = {}; // ключи "x_y", значения – объекты Digit
+// Поле игры
+let cells = {}; // ключ "x_y" → объект Digit
 let generatedChunks = new Set();
 let folderScores = [0, 0];
 const folderNames = ["Перевёрнутые", "Иная анимация"];
 let topRecords = [];
 
-// Фактор сложности (чем меньше число, тем сложнее)
+// Фактор сложности (меньшее число – сложнее)
 let difficultyFactor = 1;
 
 // Состояния игры: "menu", "difficulty", "game", "game_over", "records"
 let gameState = "menu";
 let menuOptions = ["Начать игру", "Сложность", "Рекорды", "Выход"];
-let menuSelection = 0;
+// Для меню будем считать, что каждый пункт занимает по 40px по высоте.
+let menuItemHeight = 40;
 
 let difficultyOptions = ["Лёгкая", "Средняя", "Сложная"];
 let difficultyFactors = [4, 2, 1];
 let difficultySelection = 2; // по умолчанию "Сложная"
 
+// Счёт, таймер и прочее
 let scoreTotal = 0;
 let timeLeft = START_TIME;
 let flyingDigits = [];
 let timeAnimations = [];
-let slotsToRespawn = {}; // ключ "x_y", значение – время появления
+let slotsToRespawn = {};
 
 // Положение камеры
 let cameraX = canvas.width/2, cameraY = canvas.height/2;
-let lastClickTime = 0;
-const doubleClickInterval = 300; // мс
 
-// Для перетаскивания камеры (правой кнопкой мыши)
+// Для перетаскивания камеры правой кнопкой мыши
 let isDragging = false;
 let dragStart = {x: 0, y: 0};
 let cameraStart = {x: 0, y: 0};
 
-// Для тайминга
 let lastUpdateTime = performance.now();
 
 // ----------------------
@@ -87,17 +98,20 @@ class Digit {
       this.baseAmplitude *= 2.0;
       this.baseSpeed *= 1.6;
     }
-    this.phaseOffset = Math.random() * 100;
+    // Увеличиваем разброс, чтобы анимация была менее синхронной
+    this.phaseOffset = Math.random() * 200;
     this.appearDelay = Math.random() * 1000; // мс
     this.appearDuration = 300 + Math.random() * 400; // мс
     this.appearStart = null;
   }
+  // Вычисляем позицию с учётом анимации
   screenPosition(cameraX, cameraY, currentTime) {
     let baseX = this.gx * CELL_SIZE + cameraX;
     let baseY = this.gy * CELL_SIZE + cameraY;
+    // Добавляем смещение с учётом координат для разнообразия
     let dt = (currentTime - this.phaseOffset) / 1000;
-    let dx = this.baseAmplitude * Math.cos(this.baseSpeed * dt);
-    let dy = this.baseAmplitude * Math.sin(this.baseSpeed * dt);
+    let dx = this.baseAmplitude * Math.cos(this.baseSpeed * dt + this.gx);
+    let dy = this.baseAmplitude * Math.sin(this.baseSpeed * dt + this.gy);
     let age = currentTime - this.spawnTime;
     if (age < 1000) {
       let factor = age / 1000;
@@ -116,11 +130,18 @@ class Digit {
     }
     return { x: baseX + dx, y: baseY + dy, scale: scale, alpha: alpha };
   }
+  // Отрисовка цифры с учётом особенностей анимации
   draw(ctx, cameraX, cameraY, currentTime) {
     let pos = this.screenPosition(cameraX, cameraY, currentTime);
+    let finalScale = pos.scale;
+    // Для "странной" аномалии добавляем пульсацию, аналогично оригиналу
+    if (this.anomaly === Digit.ANOMALY_STRANGE) {
+      let pulsation = 0.2 * Math.sin(this.baseSpeed * 0.7 * currentTime/1000 + this.phaseOffset);
+      finalScale *= (1.0 + pulsation);
+    }
     ctx.save();
     ctx.globalAlpha = pos.alpha;
-    ctx.font = `${24 * pos.scale}px Arial`;
+    ctx.font = `${24 * finalScale}px Arial`;
     ctx.fillStyle = COLOR_DIGITS;
     if (this.anomaly === Digit.ANOMALY_UPSIDE) {
       ctx.save();
@@ -138,7 +159,7 @@ Digit.ANOMALY_NONE = 0;
 Digit.ANOMALY_UPSIDE = 1;
 Digit.ANOMALY_STRANGE = 2;
 
-// Класс FlyingDigit – анимирует «улёт» цифры к папке
+// Класс FlyingDigit – анимирует "улёт" цифры к папке
 class FlyingDigit {
   constructor(digit, sx, sy, ex, ey, startTime, duration) {
     this.digit = digit;
@@ -215,7 +236,7 @@ function getChunkCoords(cx, cy) {
 
 function generateClusterInChunk(cx, cy, anomaly, minSize = 5, maxSize = 9) {
   let allCoords = getChunkCoords(cx, cy);
-  // перемешиваем
+  // Перемешиваем координаты
   for (let i = allCoords.length - 1; i > 0; i--) {
     let j = Math.floor(Math.random() * (i + 1));
     [allCoords[i], allCoords[j]] = [allCoords[j], allCoords[i]];
@@ -231,19 +252,16 @@ function generateClusterInChunk(cx, cy, anomaly, minSize = 5, maxSize = 9) {
       let result = [key];
       while (queue.length > 0 && result.length < clusterSize) {
         let current = queue.shift();
-        result.push(current);
         let parts = current.split("_").map(Number);
         let cx2 = parts[0], cy2 = parts[1];
         let directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
         for (let d of directions) {
           let nx = cx2 + d[0], ny = cy2 + d[1];
           let nkey = `${nx}_${ny}`;
-          if (cells[nkey] && !visited.has(nkey)) {
-            if (cells[nkey].anomaly === Digit.ANOMALY_NONE) {
-              visited.add(nkey);
-              queue.push(nkey);
-              result.push(nkey);
-            }
+          if (cells[nkey] && !visited.has(nkey) && cells[nkey].anomaly === Digit.ANOMALY_NONE) {
+            visited.add(nkey);
+            queue.push(nkey);
+            result.push(nkey);
           }
         }
       }
@@ -299,7 +317,6 @@ function drawCells() {
   let currentTime = performance.now();
   for (let key in cells) {
     let pos = cells[key].screenPosition(cameraX, cameraY, currentTime);
-    // Простой тест на видимость
     if (pos.x < -CELL_SIZE || pos.x > canvas.width + CELL_SIZE || pos.y < -CELL_SIZE || pos.y > canvas.height + CELL_SIZE)
       continue;
     cells[key].draw(ctx, cameraX, cameraY, currentTime);
@@ -366,7 +383,7 @@ function bfsCollectAnomaly(sx, sy, anomaly) {
 
 function getClickedDigit(mouseX, mouseY) {
   let currentTime = performance.now();
-  let closest = null;
+  let closestKey = null;
   let closestDist = Infinity;
   for (let key in cells) {
     let pos = cells[key].screenPosition(cameraX, cameraY, currentTime);
@@ -374,18 +391,18 @@ function getClickedDigit(mouseX, mouseY) {
     let dy = mouseY - pos.y;
     let dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < 20 && dist < closestDist) {
-      closest = key;
+      closestKey = key;
       closestDist = dist;
     }
   }
-  return closest;
+  return closestKey;
 }
 
 // ----------------------
 // Обработка ввода
 // ----------------------
 
-// Перетаскивание камеры правой кнопкой
+// Перетаскивание камеры правой кнопкой мыши
 canvas.addEventListener("mousedown", (e) => {
   if (e.button === 2) {
     isDragging = true;
@@ -402,29 +419,28 @@ canvas.addEventListener("mousemove", (e) => {
   }
 });
 canvas.addEventListener("mouseup", (e) => {
-  if (e.button === 2) {
-    isDragging = false;
-  }
+  if (e.button === 2) isDragging = false;
 });
 canvas.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-// Обработка кликов (для игры)
+// Обработка кликов – теперь в режиме игры и в меню работают клики
 canvas.addEventListener("click", (e) => {
-  if (gameState !== "game") return;
-  let currentTime = performance.now();
-  if (currentTime - lastClickTime < doubleClickInterval) {
-    let rect = canvas.getBoundingClientRect();
-    let mouseX = e.clientX - rect.left;
-    let mouseY = e.clientY - rect.top;
+  let rect = canvas.getBoundingClientRect();
+  let mouseX = e.clientX - rect.left;
+  let mouseY = e.clientY - rect.top;
+  
+  if (gameState === "game") {
+    // В режиме игры: сбор цифр по одному клику
     let clickedKey = getClickedDigit(mouseX, mouseY);
     if (clickedKey) {
       let parts = clickedKey.split("_").map(Number);
       let gx = parts[0], gy = parts[1];
       let digit = cells[clickedKey];
       let anomaly = digit.anomaly;
-      // Если кликнули по аномальной цифре
+      let currentTime = performance.now();
+      // Если клик по аномальной цифре
       if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
         let group = bfsCollectAnomaly(gx, gy, anomaly);
         if (group.length >= 5) {
@@ -446,7 +462,7 @@ canvas.addEventListener("click", (e) => {
           return;
         }
       }
-      // Если кликнули по группе с одинаковым значением
+      // Если клик по группе по значению
       let groupVal = bfsCollectValue(gx, gy);
       if (groupVal.length >= 5) {
         let fx = canvas.width / 4;
@@ -465,65 +481,50 @@ canvas.addEventListener("click", (e) => {
         timeAnimations.push(new TimePlusAnimation(`+${cVal} s`, 200, 20, currentTime, 2000));
       }
     }
-  }
-  lastClickTime = performance.now();
-});
-
-// Полноэкранный режим по двойному клику
-canvas.addEventListener("dblclick", () => {
-  if (document.fullscreenElement) {
-    document.exitFullscreen();
-  } else {
-    canvas.requestFullscreen();
-  }
-});
-
-// Обработка клавиатуры для меню
-document.addEventListener("keydown", (e) => {
-  if (gameState === "menu") {
-    if (e.key === "ArrowUp") {
-      menuSelection = (menuSelection - 1 + menuOptions.length) % menuOptions.length;
-    } else if (e.key === "ArrowDown") {
-      menuSelection = (menuSelection + 1) % menuOptions.length;
-    } else if (e.key === "Enter") {
-      let option = menuOptions[menuSelection];
-      if (option === "Начать игру") {
-        startGame();
-      } else if (option === "Сложность") {
-        gameState = "difficulty";
-        difficultySelection = 2;
-      } else if (option === "Рекорды") {
-        gameState = "records";
-      } else if (option === "Выход") {
-        location.reload();
+  } else if (gameState === "menu") {
+    // Обработка клика по пунктам главного меню
+    let optionAreaHeight = 40;
+    let baseY = canvas.height/2 - (menuOptions.length * optionAreaHeight)/2;
+    for (let i = 0; i < menuOptions.length; i++) {
+      let itemY = baseY + i * optionAreaHeight;
+      if (mouseX >= canvas.width/2 - 150 && mouseX <= canvas.width/2 + 150 &&
+          mouseY >= itemY - optionAreaHeight/2 && mouseY <= itemY + optionAreaHeight/2) {
+        let option = menuOptions[i];
+        if (option === "Начать игру") {
+          startGame();
+        } else if (option === "Сложность") {
+          gameState = "difficulty";
+          difficultySelection = 2;
+        } else if (option === "Рекорды") {
+          gameState = "records";
+        } else if (option === "Выход") {
+          location.reload();
+        }
+        return;
       }
     }
   } else if (gameState === "difficulty") {
-    if (e.key === "ArrowUp") {
-      difficultySelection = (difficultySelection - 1 + difficultyOptions.length) % difficultyOptions.length;
-    } else if (e.key === "ArrowDown") {
-      difficultySelection = (difficultySelection + 1) % difficultyOptions.length;
-    } else if (e.key === "Enter") {
-      difficultyFactor = difficultyFactors[difficultySelection];
-      gameState = "menu";
-    } else if (e.key === "Escape") {
-      gameState = "menu";
+    // Обработка клика по меню выбора сложности
+    let optionAreaHeight = 40;
+    let baseY = canvas.height/2 - (difficultyOptions.length * optionAreaHeight)/2;
+    for (let i = 0; i < difficultyOptions.length; i++) {
+      let itemY = baseY + i * optionAreaHeight;
+      if (mouseX >= canvas.width/2 - 150 && mouseX <= canvas.width/2 + 150 &&
+          mouseY >= itemY - optionAreaHeight/2 && mouseY <= itemY + optionAreaHeight/2) {
+        difficultySelection = i;
+        difficultyFactor = difficultyFactors[i];
+        gameState = "menu";
+        return;
+      }
     }
-  } else if (gameState === "records") {
-    if (e.key === "Escape") {
-      gameState = "menu";
-    }
-  } else if (gameState === "game_over") {
-    if (e.key === "Enter") {
-      gameState = "menu";
-    } else if (e.key === "Escape") {
-      location.reload();
-    }
+  } else if (gameState === "records" || gameState === "game_over") {
+    // Клик в этих режимах возвращает в меню
+    gameState = "menu";
   }
 });
 
 // ----------------------
-// Функции для отрисовки экранов меню, сложности, рекордов и Game Over
+// Функции отрисовки экранов
 // ----------------------
 function drawMenu() {
   ctx.fillStyle = COLOR_BG;
@@ -532,10 +533,12 @@ function drawMenu() {
   ctx.fillStyle = COLOR_MENU_TXT;
   ctx.textAlign = "center";
   ctx.fillText("Главное меню", canvas.width/2, canvas.height/4);
+  let optionAreaHeight = 40;
+  let baseY = canvas.height/2 - (menuOptions.length * optionAreaHeight)/2;
   for (let i = 0; i < menuOptions.length; i++) {
     ctx.font = "36px Arial";
-    ctx.fillStyle = (i === menuSelection) ? COLOR_MENU_SEL : COLOR_MENU_TXT;
-    ctx.fillText(menuOptions[i], canvas.width/2, canvas.height/2 + i * 50);
+    ctx.fillStyle = COLOR_MENU_TXT;
+    ctx.fillText(menuOptions[i], canvas.width/2, baseY + i * optionAreaHeight);
   }
 }
 
@@ -546,13 +549,15 @@ function drawDifficultyMenu() {
   ctx.fillStyle = COLOR_MENU_TXT;
   ctx.textAlign = "center";
   ctx.fillText("Выберите сложность", canvas.width/2, canvas.height/4);
+  let optionAreaHeight = 40;
+  let baseY = canvas.height/2 - (difficultyOptions.length * optionAreaHeight)/2;
   for (let i = 0; i < difficultyOptions.length; i++) {
     ctx.font = "36px Arial";
     ctx.fillStyle = (i === difficultySelection) ? COLOR_MENU_SEL : COLOR_MENU_TXT;
-    ctx.fillText(difficultyOptions[i], canvas.width/2, canvas.height/2 + i * 50);
+    ctx.fillText(difficultyOptions[i], canvas.width/2, baseY + i * optionAreaHeight);
   }
   ctx.font = "24px Arial";
-  ctx.fillText("Enter - подтвердить, Esc - отмена", canvas.width/2, canvas.height - 50);
+  ctx.fillText("Клик - подтвердить, клик вне - отмена", canvas.width/2, canvas.height - 50);
 }
 
 function drawRecords() {
@@ -566,9 +571,10 @@ function drawRecords() {
   for (let i = 0; i < topRecords.length; i++) {
     ctx.fillText(`${i+1}. ${topRecords[i]}`, canvas.width/2, canvas.height/3 + i * 30);
   }
-  ctx.fillText("Нажмите Esc чтобы вернуться", canvas.width/2, canvas.height - 50);
+  ctx.fillText("Клик - вернуться", canvas.width/2, canvas.height - 50);
 }
 
+let lastScore = 0;
 function drawGameOver() {
   ctx.fillStyle = COLOR_BG;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -578,11 +584,10 @@ function drawGameOver() {
   ctx.fillText("Время вышло!", canvas.width/2, canvas.height/4);
   ctx.fillText(`Ваш счёт: ${lastScore}`, canvas.width/2, canvas.height/2);
   ctx.font = "24px Arial";
-  ctx.fillText("Enter - в меню, Esc - выход", canvas.width/2, canvas.height - 50);
+  ctx.fillText("Клик - в меню", canvas.width/2, canvas.height - 50);
 }
 
 function startGame() {
-  // Сброс переменных
   cells = {};
   generatedChunks.clear();
   folderScores = [0, 0];
@@ -591,7 +596,6 @@ function startGame() {
   flyingDigits = [];
   timeAnimations = [];
   slotsToRespawn = {};
-  // Инициализируем начальные чанки (например, вокруг (0,0))
   for (let cx = -1; cx <= 2; cx++) {
     for (let cy = -1; cy <= 2; cy++) {
       generateChunk(cx, cy);
@@ -613,10 +617,7 @@ function updateGame(dt) {
     return;
   }
   ensureVisibleChunks();
-  // Обновляем "улетающие" цифры
   flyingDigits = flyingDigits.filter(fd => (currentTime - fd.startTime) < fd.duration);
-  // Анимации времени рисуются прямо в drawGame (их удаление происходит через фильтрацию)
-  // Респавн цифр
   for (let key in slotsToRespawn) {
     if (currentTime >= slotsToRespawn[key]) {
       let parts = key.split("_").map(Number);
@@ -633,11 +634,9 @@ function drawGame() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   let currentTime = performance.now();
   drawCells();
-  // Рисуем летающие цифры
   for (let fd of flyingDigits) {
     fd.draw(ctx, currentTime);
   }
-  // Рисуем области папок в нижней части экрана
   for (let i = 0; i < 2; i++) {
     let rectX = i * canvas.width / 2;
     let rectY = canvas.height - FOLDER_HEIGHT;
@@ -651,18 +650,17 @@ function drawGame() {
     ctx.textAlign = "center";
     ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + canvas.width / 4, rectY + FOLDER_HEIGHT / 2);
   }
-  // Рисуем счёт в верхнем левом углу
   let scoreStr = `Счёт: ${scoreTotal}`;
   ctx.font = "24px Arial";
   ctx.fillStyle = COLOR_SCORE_TXT;
   ctx.textAlign = "left";
   ctx.fillText(scoreStr, 10, 30);
-  // Рисуем таймер в верхней части экрана
   let timeStr = `${Math.floor(timeLeft)} с.`;
   ctx.font = "24px Arial";
   ctx.fillStyle = COLOR_TIMER_TXT;
   ctx.textAlign = "center";
   ctx.fillText(timeStr, canvas.width / 2, 30);
+  timeAnimations = timeAnimations.filter(anim => anim.draw(ctx, currentTime));
 }
 
 function gameLoop() {
