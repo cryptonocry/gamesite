@@ -3,10 +3,10 @@ import { Digit } from "./digit.js";
 export const CELL_SIZE = 80;
 export const CHUNK_SIZE = 20;
 
-// Global objects
-export let cells = {};            // { "x_y": Digit }
+// Global game objects
+export let cells = {}; // { "x_y": Digit }
 export let generatedChunks = new Set();
-export let folderScores = [0, 0]; // for "Upside" / "Strange"
+export let folderScores = [0, 0];
 export const folderNames = ["Upside", "Strange"];
 
 function getChunkCoords(cx, cy) {
@@ -23,7 +23,6 @@ function getChunkCoords(cx, cy) {
 
 function generateClusterInChunk(cx, cy, anomaly, minSize = 5, maxSize = 9) {
   const allCoords = getChunkCoords(cx, cy);
-  // shuffle
   for (let i = allCoords.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [allCoords[i], allCoords[j]] = [allCoords[j], allCoords[i]];
@@ -66,7 +65,6 @@ export function generateChunk(cx, cy) {
   const chunkKey = `${cx}_${cy}`;
   if (generatedChunks.has(chunkKey)) return;
   generatedChunks.add(chunkKey);
-
   const coords = getChunkCoords(cx, cy);
   for (let coord of coords) {
     const key = `${coord.x}_${coord.y}`;
@@ -74,12 +72,9 @@ export function generateChunk(cx, cy) {
     const digit = new Digit(coord.x, coord.y, value, Digit.ANOMALY_NONE);
     cells[key] = digit;
   }
-  // guaranteed clusters
   generateClusterInChunk(cx, cy, Digit.ANOMALY_UPSIDE);
   generateClusterInChunk(cx, cy, Digit.ANOMALY_STRANGE);
-
-  // additional clusters
-  let numClusters = Math.floor((2 * 1) - 2); // difficultyFactor=1
+  let numClusters = Math.floor((2 * 1) - 2);
   for (let i = 0; i < numClusters; i++) {
     const anomaly = (Math.random() < 0.5) ? Digit.ANOMALY_UPSIDE : Digit.ANOMALY_STRANGE;
     generateClusterInChunk(cx, cy, anomaly);
@@ -107,7 +102,7 @@ export function drawCells(ctx, cameraX, cameraY, canvasWidth, canvasHeight) {
   for (let key in cells) {
     const digit = cells[key];
     const pos = digit.screenPosition(cameraX, cameraY, currentTime);
-    if (pos.x < -CELL_SIZE || pos.x > canvasWidth  + CELL_SIZE ||
+    if (pos.x < -CELL_SIZE || pos.x > canvasWidth + CELL_SIZE ||
         pos.y < -CELL_SIZE || pos.y > canvasHeight + CELL_SIZE)
       continue;
     digit.draw(ctx, cameraX, cameraY, currentTime);
