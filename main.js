@@ -1,6 +1,6 @@
 "use strict";
 
-import { addParticipantToXano } from "./api.js";
+import { addParticipantToXano, fetchAllParticipantsFromXano } from "./api.js";
 import { Digit, FlyingDigit, TimePlusAnimation } from "./digit.js";
 import { 
   cells, generatedChunks, folderScores, folderNames,
@@ -18,7 +18,7 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// HTML-элементы
+// Получаем HTML-элементы
 const fullscreenButton     = document.getElementById("fullscreenButton");
 const loginContainer       = document.getElementById("loginContainer");
 const loginButton          = document.getElementById("loginButton");
@@ -56,7 +56,9 @@ let cameraStart = { x: 0, y: 0 };
 let lastUpdateTime = performance.now();
 let lastScore = 0;
 
-// Обработчики входа
+// ----------------------
+// Обработка входа
+// ----------------------
 loginButton.addEventListener("click", () => {
   const nickname = nicknameInput.value.trim();
   const wallet = walletInput.value.trim();
@@ -65,22 +67,37 @@ loginButton.addEventListener("click", () => {
     return;
   }
   currentPlayer = { nickname, wallet, score: 0 };
+  console.log("Логин успешен:", currentPlayer);
   loginContainer.style.display = "none";
   startGame();
 });
 
-// Закрыть рейтинг
+// Закрытие рейтинга
 closeRecordsButton.addEventListener("click", () => {
   recordsContainer.style.display = "none";
   gameState = "menu";
 });
 
-// Обработка кликов на canvas (меню/игра)
+// ----------------------
+// Функции работы с Xano (при game over и отображении рейтинга)
+// ----------------------
+async function saveResult() {
+  if (currentPlayer) {
+    currentPlayer.score = scoreTotal;
+    await addParticipantToXano(currentPlayer.nickname, currentPlayer.wallet, scoreTotal);
+  }
+}
+
+// ----------------------
+// Обработка кликов на canvas
+// ----------------------
 canvas.addEventListener("click", async (e) => {
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
+
   if (gameState === "menu") {
+    // Обработка кликов по меню
     const menuOptions = ["Начать игру", "Рекорды", "Выход"];
     const optionAreaHeight = 40;
     const baseY = canvas.height / 2 - (menuOptions.length * optionAreaHeight) / 2;
@@ -104,6 +121,7 @@ canvas.addEventListener("click", async (e) => {
       }
     }
   } else if (gameState === "game") {
+    // Обработка кликов во время игры: сбор групп цифр
     const clickedKey = getClickedDigit(mouseX, mouseY, cameraX, cameraY);
     if (clickedKey) {
       const parts = clickedKey.split("_").map(Number);
@@ -178,7 +196,9 @@ canvas.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-// Функции отрисовки меню и Game Over (на canvas)
+// ----------------------
+// Функции отрисовки: меню, game_over, игра
+// ----------------------
 function drawMenu() {
   ctx.fillStyle = "#021013";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -208,8 +228,11 @@ function drawGameOver() {
   ctx.fillText("Клик - в меню", canvas.width / 2, canvas.height - 50);
 }
 
+// ----------------------
 // Функции обновления и отрисовки игры
+// ----------------------
 function startGame() {
+  console.log("Game started");
   cells = {};
   generatedChunks.clear();
   folderScores = [0, 0];
@@ -259,7 +282,6 @@ function drawGame() {
   for (let fd of flyingDigits) {
     fd.draw(ctx, currentTime);
   }
-  // Отрисовка "папок"
   for (let i = 0; i < 2; i++) {
     const rectX = i * canvas.width / 2;
     const rectY = canvas.height - FOLDER_HEIGHT;
