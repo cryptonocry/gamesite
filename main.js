@@ -9,9 +9,7 @@ import {
 } from "./game.js";
 import { showRecordsOverlay } from "./ui.js";
 
-// --------------------------------
-// ЭЛЕМЕНТЫ HTML
-// --------------------------------
+// HTML elements
 const canvas              = document.getElementById("gameCanvas");
 const ctx                 = canvas.getContext("2d");
 const fullscreenButton    = document.getElementById("fullscreenButton");
@@ -23,20 +21,18 @@ const recordsContainer    = document.getElementById("recordsContainer");
 const recordsTableContainer = document.getElementById("recordsTableContainer");
 const closeRecordsButton  = document.getElementById("closeRecordsButton");
 
-// --------------------------------
-// ПАРАМЕТРЫ ИГРЫ
-// --------------------------------
-const START_TIME    = 60;
-const FOLDER_HEIGHT = 80;
-let gameState  = "menu"; // "menu", "game", "game_over"
+// Game states
+let gameState = "menu"; // "menu", "game", "game_over"
 let currentPlayer = null; // { nickname, wallet, score }
+
+// Score, time, etc.
 let scoreTotal = 0;
-let timeLeft   = START_TIME;
+let timeLeft   = 60;
 let flyingDigits  = [];
 let timeAnimations = {};
 let slotsToRespawn = {};
 
-// Параметры камеры
+// Camera position
 let cameraX = canvas.width / 2;
 let cameraY = canvas.height / 2;
 let isDragging = false;
@@ -44,11 +40,9 @@ let dragStart  = { x: 0, y: 0 };
 let cameraStart= { x: 0, y: 0 };
 
 let lastUpdateTime = performance.now();
-let lastScore = 0; // Запоминаем счёт для game_over
+let lastScore = 0;
 
-// --------------------------------
-// ПОЛНОЭКРАННЫЙ РЕЖИМ
-// --------------------------------
+// Fullscreen button
 fullscreenButton.addEventListener("click", () => {
   if (!document.fullscreenElement) {
     canvas.requestFullscreen();
@@ -57,9 +51,7 @@ fullscreenButton.addEventListener("click", () => {
   }
 });
 
-// --------------------------------
-// ФУНКЦИЯ ИЗМЕНЕНИЯ РАЗМЕРОВ CANVAS
-// --------------------------------
+// Resize canvas
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -67,41 +59,59 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// --------------------------------
-// ВХОД (LOGIN): никнейм + кошелёк
-// --------------------------------
+// ----------------------
+// VALIDATION FUNCTIONS
+// ----------------------
+function validateNickname(nickname) {
+  // 1–10 chars, only letters (A–Z, a–z), digits (0–9), underscore
+  const regex = /^[A-Za-z0-9_]{1,10}$/;
+  return regex.test(nickname);
+}
+
+function validateWallet(wallet) {
+  // exactly 62 chars, only lowercase letters (a–z) and digits (0–9)
+  const regex = /^[a-z0-9]{62}$/;
+  return regex.test(wallet);
+}
+
+// ----------------------
+// LOGIN EVENT
+// ----------------------
 loginButton.addEventListener("click", () => {
   const nickname = nicknameInput.value.trim();
   const wallet   = walletInput.value.trim();
-  if (!nickname || !wallet) {
-    alert("Заполните оба поля!");
+
+  // Check nickname
+  if (!validateNickname(nickname)) {
+    alert("Invalid nickname! Must be 1–10 characters (letters, digits, underscore).");
     return;
   }
+  // Check wallet
+  if (!validateWallet(wallet)) {
+    alert("Invalid BTC Taproot wallet! Must be exactly 62 lowercase letters/digits.");
+    return;
+  }
+
   currentPlayer = { nickname, wallet, score: 0 };
-  console.log("Логин успешен:", currentPlayer);
+  console.log("Login successful:", currentPlayer);
   loginContainer.style.display = "none";
   startGame();
 });
 
-// --------------------------------
-// ЗАКРЫТИЕ РЕЙТИНГА
-// --------------------------------
+// Close records overlay
 closeRecordsButton.addEventListener("click", () => {
   recordsContainer.style.display = "none";
   gameState = "menu";
 });
 
-// --------------------------------
-// ОБРАБОТКА КЛИКОВ НА CANVAS
-// --------------------------------
+// Canvas click: menu or game
 canvas.addEventListener("click", async (e) => {
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
 
   if (gameState === "menu") {
-    // Меню: "Начать игру", "Рекорды", "Выход"
-    const menuOptions = ["Начать игру", "Рекорды", "Выход"];
+    const menuOptions = ["Start Game", "Records", "Exit"];
     const optionAreaHeight = 40;
     const baseY = canvas.height / 2 - (menuOptions.length * optionAreaHeight) / 2;
     for (let i = 0; i < menuOptions.length; i++) {
@@ -109,16 +119,15 @@ canvas.addEventListener("click", async (e) => {
       if (mouseX >= canvas.width / 2 - 150 && mouseX <= canvas.width / 2 + 150 &&
           mouseY >= itemY - optionAreaHeight / 2 && mouseY <= itemY + optionAreaHeight / 2) {
         const option = menuOptions[i];
-        if (option === "Начать игру") {
-          // Если не введён никнейм + кошелёк
+        if (option === "Start Game") {
           if (!currentPlayer) {
             loginContainer.style.display = "block";
           } else {
             startGame();
           }
-        } else if (option === "Рекорды") {
+        } else if (option === "Records") {
           await showRecordsOverlay(recordsTableContainer, recordsContainer, currentPlayer);
-        } else if (option === "Выход") {
+        } else if (option === "Exit") {
           location.reload();
         }
         return;
@@ -126,7 +135,7 @@ canvas.addEventListener("click", async (e) => {
     }
   }
   else if (gameState === "game") {
-    // Логика кликов во время игры
+    // In-game clicks: BFS collecting
     const clickedKey = getClickedDigit(mouseX, mouseY, cameraX, cameraY);
     if (clickedKey) {
       const parts = clickedKey.split("_").map(Number);
@@ -135,13 +144,13 @@ canvas.addEventListener("click", async (e) => {
       const anomaly = digit.anomaly;
       const currentTime = performance.now();
 
-      // Сбор групп по аномалии
+      // Anomaly BFS
       if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
         const group = bfsCollectAnomaly(gx, gy, anomaly);
         if (group.length >= 5) {
           const idx = (anomaly === Digit.ANOMALY_UPSIDE) ? 0 : 1;
           const fx = canvas.width / 4 + (idx * canvas.width / 2);
-          const fy = canvas.height - FOLDER_HEIGHT / 2;
+          const fy = canvas.height - 80 / 2; // FOLDER_HEIGHT
           const countDig = group.length;
           for (let key of group) {
             const d = cells[key];
@@ -153,17 +162,17 @@ canvas.addEventListener("click", async (e) => {
           scoreTotal += countDig * 10;
           folderScores[idx] += countDig;
           timeLeft += countDig;
-          console.log("Собрано аномалий:", countDig);
           const plusAnim = new TimePlusAnimation(`+${countDig} s`, 200, 20, currentTime, 2000);
           timeAnimations[Date.now()] = plusAnim;
           return;
         }
       }
-      // Сбор групп по значению
+
+      // Value BFS
       const groupVal = bfsCollectValue(gx, gy);
       if (groupVal.length >= 5) {
         const fx = canvas.width / 4;
-        const fy = canvas.height - FOLDER_HEIGHT / 2;
+        const fy = canvas.height - 80 / 2;
         const cVal = groupVal.length;
         for (let key of groupVal) {
           const d = cells[key];
@@ -175,21 +184,18 @@ canvas.addEventListener("click", async (e) => {
         scoreTotal += cVal * 10;
         folderScores[0] += cVal;
         timeLeft += cVal;
-        console.log("Собрано по значению:", cVal);
         const plusAnim = new TimePlusAnimation(`+${cVal} s`, 200, 20, currentTime, 2000);
         timeAnimations[Date.now()] = plusAnim;
       }
     }
   }
   else if (gameState === "game_over") {
-    // При клике в game_over → меню
+    // Click => go to menu
     gameState = "menu";
   }
 });
 
-// --------------------------------
-// ПЕРЕТАСКИВАНИЕ КАМЕРЫ ПРАВОЙ КНОПКОЙ
-// --------------------------------
+// Camera dragging (right mouse button)
 canvas.addEventListener("mousedown", (e) => {
   if (e.button === 2) {
     isDragging = true;
@@ -212,18 +218,16 @@ canvas.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-// --------------------------------
-// ОТРИСОВКА МЕНЮ И GAME OVER
-// --------------------------------
+// Draw menu and game over
 function drawMenu() {
   ctx.fillStyle = "#021013";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.font = "36px Arial";
   ctx.fillStyle = "#7AC0D6";
   ctx.textAlign = "center";
-  ctx.fillText("Главное меню", canvas.width / 2, canvas.height / 4);
+  ctx.fillText("Main Menu", canvas.width / 2, canvas.height / 4);
 
-  const menuOptions = ["Начать игру", "Рекорды", "Выход"];
+  const menuOptions = ["Start Game", "Records", "Exit"];
   const optionAreaHeight = 40;
   const baseY = canvas.height / 2 - (menuOptions.length * optionAreaHeight) / 2;
   for (let i = 0; i < menuOptions.length; i++) {
@@ -239,29 +243,27 @@ function drawGameOver() {
   ctx.font = "36px Arial";
   ctx.fillStyle = "#7AC0D6";
   ctx.textAlign = "center";
-  ctx.fillText("Время вышло!", canvas.width / 2, canvas.height / 4);
-  ctx.fillText(`Ваш счёт: ${lastScore}`, canvas.width / 2, canvas.height / 2);
+  ctx.fillText("Time's up!", canvas.width / 2, canvas.height / 4);
+  ctx.fillText(`Your score: ${lastScore}`, canvas.width / 2, canvas.height / 2);
   ctx.font = "24px Arial";
-  ctx.fillText("Клик - в меню", canvas.width / 2, canvas.height - 50);
+  ctx.fillText("Click to return to menu", canvas.width / 2, canvas.height - 50);
 }
 
-// --------------------------------
-// СТАРТ ИГРЫ
-// --------------------------------
+// Start game
 function startGame() {
   console.log("Game started");
-  // Сброс всего
+  // Reset everything
   for (const key in cells) delete cells[key];
   generatedChunks.clear();
   folderScores[0] = 0;
   folderScores[1] = 0;
   scoreTotal = 0;
-  timeLeft = START_TIME;
+  timeLeft = 60;
   flyingDigits = [];
   timeAnimations = {};
   slotsToRespawn = {};
 
-  // Генерируем чанки вокруг (0,0)
+  // Generate chunks around (0,0)
   for (let cx = -1; cx <= 2; cx++) {
     for (let cy = -1; cy <= 2; cy++) {
       generateChunk(cx, cy);
@@ -270,9 +272,7 @@ function startGame() {
   gameState = "game";
 }
 
-// --------------------------------
-// ОБНОВЛЕНИЕ И ОТРИСОВКА
-// --------------------------------
+// Update & draw game
 function updateGame(dt) {
   const currentTime = performance.now();
   timeLeft -= dt / 1000;
@@ -286,11 +286,11 @@ function updateGame(dt) {
     return;
   }
   ensureVisibleChunks(cameraX, cameraY, canvas.width, canvas.height);
-  
-  // Убираем "улетающие цифры", если их анимация завершена
+
+  // Remove finished flying digits
   flyingDigits = flyingDigits.filter(fd => (currentTime - fd.startTime) < fd.duration);
 
-  // Респавн цифр
+  // Respawn
   for (let key in slotsToRespawn) {
     if (currentTime >= slotsToRespawn[key]) {
       const parts = key.split("_").map(Number);
@@ -308,55 +308,52 @@ function drawGame() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   const currentTime = performance.now();
 
-  // Отрисовка всех клеток
   drawCells(ctx, cameraX, cameraY, canvas.width, canvas.height);
 
-  // Отрисовка "улетающих" цифр
+  // Draw flying digits
   for (let fd of flyingDigits) {
     fd.draw(ctx, currentTime);
   }
 
-  // Отрисовка папок (2 штуки)
+  // Draw 2 "folders" at bottom
   for (let i = 0; i < 2; i++) {
     const rectX = i * canvas.width / 2;
-    const rectY = canvas.height - FOLDER_HEIGHT;
+    const rectY = canvas.height - 80; // FOLDER_HEIGHT
     ctx.fillStyle = "#7AC0D6";
-    ctx.fillRect(rectX, rectY, canvas.width / 2, FOLDER_HEIGHT);
+    ctx.fillRect(rectX, rectY, canvas.width / 2, 80);
     ctx.strokeStyle = "#7AC0D6";
     ctx.lineWidth = 2;
-    ctx.strokeRect(rectX, rectY, canvas.width / 2, FOLDER_HEIGHT);
+    ctx.strokeRect(rectX, rectY, canvas.width / 2, 80);
     ctx.font = "24px Arial";
     ctx.fillStyle = "#021013";
     ctx.textAlign = "center";
-    ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + canvas.width / 4, rectY + FOLDER_HEIGHT / 2);
+    ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + canvas.width / 4, rectY + 80 / 2);
   }
 
-  // Счёт (левый верх)
+  // Score (top-left)
   ctx.font = "24px Arial";
   ctx.fillStyle = "#7AC0D6";
   ctx.textAlign = "left";
-  ctx.fillText(`Счёт: ${scoreTotal}`, 10, 30);
+  ctx.fillText(`Score: ${scoreTotal}`, 10, 30);
 
-  // Таймер (верх, центр)
+  // Timer (top-center)
   ctx.textAlign = "center";
-  ctx.fillText(`${Math.floor(timeLeft)} с.`, canvas.width / 2, 30);
+  ctx.fillText(`${Math.floor(timeLeft)} s.`, canvas.width / 2, 30);
 
-  // Анимации "+N s"
-  for (const key in timeAnimations) {
-    const anim = timeAnimations[key];
+  // Time-plus animations
+  for (const k in timeAnimations) {
+    const anim = timeAnimations[k];
     const keep = anim.draw(ctx, currentTime);
     if (!keep) {
-      delete timeAnimations[key];
+      delete timeAnimations[k];
     }
   }
 }
 
-// --------------------------------
-// ГЛАВНЫЙ ЦИКЛ
-// --------------------------------
+// Main loop
 function gameLoop() {
-  // Для отладки можно выводить:
-  // console.log("gameLoop called, gameState =", gameState);
+  // For debugging:
+  // console.log("gameLoop, state =", gameState);
 
   const currentTime = performance.now();
   const dt = currentTime - lastUpdateTime;
@@ -374,7 +371,6 @@ function gameLoop() {
       drawGameOver();
       break;
   }
-
   requestAnimationFrame(gameLoop);
 }
 requestAnimationFrame(gameLoop);
