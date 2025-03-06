@@ -31,18 +31,15 @@
     /* Экран входа */
     #loginContainer {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       display: none;
       z-index: 101;
       background: rgba(0, 0, 0, 0.8);
     }
     #loginContent {
       position: absolute;
-      top: 50%;
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       background: #021013;
       padding: 20px;
@@ -68,10 +65,8 @@
     /* Экран рейтинга */
     #recordsContainer {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       display: none;
       z-index: 102;
       background: rgba(0, 0, 0, 0.9);
@@ -109,19 +104,20 @@
   </style>
 </head>
 <body>
+  <!-- Кнопка полного экрана -->
   <button id="fullscreenButton">Полный экран</button>
   
-  <!-- Экран входа -->
+  <!-- Оверлей входа (никнейм + кошелёк) -->
   <div id="loginContainer">
     <div id="loginContent">
       <h2>Вход в игру</h2>
       <input id="nicknameInput" type="text" placeholder="Никнейм">
-      <input id="walletInput" type="text" placeholder="Биткойн кошелек">
+      <input id="walletInput"   type="text" placeholder="Биткойн кошелек">
       <button id="loginButton">Начать игру</button>
     </div>
   </div>
   
-  <!-- Экран рейтинга -->
+  <!-- Оверлей рейтинга -->
   <div id="recordsContainer">
     <div id="recordsContent">
       <h2>Рейтинг</h2>
@@ -130,8 +126,10 @@
     </div>
   </div>
   
+  <!-- Canvas -->
   <canvas id="gameCanvas"></canvas>
-  <!-- Подключаем главный файл как модуль -->
+  
+  <!-- Подключаем главный файл (ES-модуль) -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
