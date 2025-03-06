@@ -71,12 +71,12 @@ let timeAnimations = [];
 let slotsToRespawn = {};
 
 // Положение камеры
-let cameraX = canvas.width/2, cameraY = canvas.height/2;
+let cameraX = canvas.width / 2, cameraY = canvas.height / 2;
 
 // Для перетаскивания камеры правой кнопкой мыши
 let isDragging = false;
-let dragStart = {x: 0, y: 0};
-let cameraStart = {x: 0, y: 0};
+let dragStart = { x: 0, y: 0 };
+let cameraStart = { x: 0, y: 0 };
 
 let lastUpdateTime = performance.now();
 
@@ -84,7 +84,7 @@ let lastUpdateTime = performance.now();
 // Классы
 // ----------------------
 
-// Класс Digit – отрисовываемая цифра с анимацией
+// Класс Digit – отрисовываемая цифра с анимацией появления и вращения
 class Digit {
   constructor(gx, gy, value, anomaly, spawnTime = performance.now()) {
     this.gx = gx;
@@ -98,20 +98,22 @@ class Digit {
       this.baseAmplitude *= 2.0;
       this.baseSpeed *= 1.6;
     }
-    // Случайный phaseOffset для независимой анимации (без учета координат)
-    this.phaseOffset = Math.random() * 100;
+    // Случайный фазовый сдвиг в диапазоне [0, 2π]
+    this.phaseOffset = Math.random() * Math.PI * 2;
     this.appearDelay = Math.random() * 1000; // мс
     this.appearDuration = 300 + Math.random() * 400; // мс
     this.appearStart = null;
   }
-  // Метод вычисления позиции цифры с учетом анимации появления и плавного смещения
+  // Вычисляем позицию цифры с независимой анимацией
   screenPosition(cameraX, cameraY, currentTime) {
     let baseX = this.gx * CELL_SIZE + cameraX;
     let baseY = this.gy * CELL_SIZE + cameraY;
-    // Используем только phaseOffset для анимации (без добавления координат)
-    let dt = (currentTime - this.phaseOffset) / 1000;
-    let dx = this.baseAmplitude * Math.cos(this.baseSpeed * dt);
-    let dy = this.baseAmplitude * Math.sin(this.baseSpeed * dt);
+    // Время, прошедшее с момента появления, в секундах
+    let dt = (currentTime - this.spawnTime) / 1000;
+    // Уникальный угол для каждой цифры
+    let angle = this.baseSpeed * dt + this.phaseOffset;
+    let dx = this.baseAmplitude * Math.cos(angle);
+    let dy = this.baseAmplitude * Math.sin(angle);
     let age = currentTime - this.spawnTime;
     if (age < 1000) {
       let factor = age / 1000;
@@ -136,7 +138,7 @@ class Digit {
     let finalScale = pos.scale;
     // Для аномалии "Иная анимация" добавляем пульсацию
     if (this.anomaly === Digit.ANOMALY_STRANGE) {
-      let pulsation = 0.2 * Math.sin(this.baseSpeed * 0.7 * currentTime/1000 + this.phaseOffset);
+      let pulsation = 0.2 * Math.sin(this.baseSpeed * 0.7 * ((currentTime - this.spawnTime) / 1000) + this.phaseOffset);
       finalScale *= (1.0 + pulsation);
     }
     ctx.save();
@@ -317,7 +319,8 @@ function drawCells() {
   let currentTime = performance.now();
   for (let key in cells) {
     let pos = cells[key].screenPosition(cameraX, cameraY, currentTime);
-    if (pos.x < -CELL_SIZE || pos.x > canvas.width + CELL_SIZE || pos.y < -CELL_SIZE || pos.y > canvas.height + CELL_SIZE)
+    if (pos.x < -CELL_SIZE || pos.x > canvas.width + CELL_SIZE ||
+        pos.y < -CELL_SIZE || pos.y > canvas.height + CELL_SIZE)
       continue;
     cells[key].draw(ctx, cameraX, cameraY, currentTime);
   }
@@ -484,11 +487,11 @@ canvas.addEventListener("click", (e) => {
   } else if (gameState === "menu") {
     // Обработка клика по пунктам главного меню
     let optionAreaHeight = 40;
-    let baseY = canvas.height/2 - (menuOptions.length * optionAreaHeight)/2;
+    let baseY = canvas.height / 2 - (menuOptions.length * optionAreaHeight) / 2;
     for (let i = 0; i < menuOptions.length; i++) {
       let itemY = baseY + i * optionAreaHeight;
-      if (mouseX >= canvas.width/2 - 150 && mouseX <= canvas.width/2 + 150 &&
-          mouseY >= itemY - optionAreaHeight/2 && mouseY <= itemY + optionAreaHeight/2) {
+      if (mouseX >= canvas.width / 2 - 150 && mouseX <= canvas.width / 2 + 150 &&
+          mouseY >= itemY - optionAreaHeight / 2 && mouseY <= itemY + optionAreaHeight / 2) {
         let option = menuOptions[i];
         if (option === "Начать игру") {
           startGame();
@@ -506,11 +509,11 @@ canvas.addEventListener("click", (e) => {
   } else if (gameState === "difficulty") {
     // Обработка клика по меню выбора сложности
     let optionAreaHeight = 40;
-    let baseY = canvas.height/2 - (difficultyOptions.length * optionAreaHeight)/2;
+    let baseY = canvas.height / 2 - (difficultyOptions.length * optionAreaHeight) / 2;
     for (let i = 0; i < difficultyOptions.length; i++) {
       let itemY = baseY + i * optionAreaHeight;
-      if (mouseX >= canvas.width/2 - 150 && mouseX <= canvas.width/2 + 150 &&
-          mouseY >= itemY - optionAreaHeight/2 && mouseY <= itemY + optionAreaHeight/2) {
+      if (mouseX >= canvas.width / 2 - 150 && mouseX <= canvas.width / 2 + 150 &&
+          mouseY >= itemY - optionAreaHeight / 2 && mouseY <= itemY + optionAreaHeight / 2) {
         difficultySelection = i;
         difficultyFactor = difficultyFactors[i];
         gameState = "menu";
@@ -532,13 +535,13 @@ function drawMenu() {
   ctx.font = "36px Arial";
   ctx.fillStyle = COLOR_MENU_TXT;
   ctx.textAlign = "center";
-  ctx.fillText("Главное меню", canvas.width/2, canvas.height/4);
+  ctx.fillText("Главное меню", canvas.width / 2, canvas.height / 4);
   let optionAreaHeight = 40;
-  let baseY = canvas.height/2 - (menuOptions.length * optionAreaHeight)/2;
+  let baseY = canvas.height / 2 - (menuOptions.length * optionAreaHeight) / 2;
   for (let i = 0; i < menuOptions.length; i++) {
     ctx.font = "36px Arial";
     ctx.fillStyle = COLOR_MENU_TXT;
-    ctx.fillText(menuOptions[i], canvas.width/2, baseY + i * optionAreaHeight);
+    ctx.fillText(menuOptions[i], canvas.width / 2, baseY + i * optionAreaHeight);
   }
 }
 
@@ -548,16 +551,16 @@ function drawDifficultyMenu() {
   ctx.font = "36px Arial";
   ctx.fillStyle = COLOR_MENU_TXT;
   ctx.textAlign = "center";
-  ctx.fillText("Выберите сложность", canvas.width/2, canvas.height/4);
+  ctx.fillText("Выберите сложность", canvas.width / 2, canvas.height / 4);
   let optionAreaHeight = 40;
-  let baseY = canvas.height/2 - (difficultyOptions.length * optionAreaHeight)/2;
+  let baseY = canvas.height / 2 - (difficultyOptions.length * optionAreaHeight) / 2;
   for (let i = 0; i < difficultyOptions.length; i++) {
     ctx.font = "36px Arial";
     ctx.fillStyle = (i === difficultySelection) ? COLOR_MENU_SEL : COLOR_MENU_TXT;
-    ctx.fillText(difficultyOptions[i], canvas.width/2, baseY + i * optionAreaHeight);
+    ctx.fillText(difficultyOptions[i], canvas.width / 2, baseY + i * optionAreaHeight);
   }
   ctx.font = "24px Arial";
-  ctx.fillText("Клик - подтвердить, клик вне - отмена", canvas.width/2, canvas.height - 50);
+  ctx.fillText("Клик - подтвердить, клик вне - отмена", canvas.width / 2, canvas.height - 50);
 }
 
 function drawRecords() {
@@ -566,12 +569,12 @@ function drawRecords() {
   ctx.font = "36px Arial";
   ctx.fillStyle = COLOR_MENU_TXT;
   ctx.textAlign = "center";
-  ctx.fillText("Топ-10 Рекорды", canvas.width/2, canvas.height/6);
+  ctx.fillText("Топ-10 Рекорды", canvas.width / 2, canvas.height / 6);
   ctx.font = "24px Arial";
   for (let i = 0; i < topRecords.length; i++) {
-    ctx.fillText(`${i+1}. ${topRecords[i]}`, canvas.width/2, canvas.height/3 + i * 30);
+    ctx.fillText(`${i + 1}. ${topRecords[i]}`, canvas.width / 2, canvas.height / 3 + i * 30);
   }
-  ctx.fillText("Клик - вернуться", canvas.width/2, canvas.height - 50);
+  ctx.fillText("Клик - вернуться", canvas.width / 2, canvas.height - 50);
 }
 
 let lastScore = 0;
@@ -581,10 +584,10 @@ function drawGameOver() {
   ctx.font = "36px Arial";
   ctx.fillStyle = COLOR_MENU_TXT;
   ctx.textAlign = "center";
-  ctx.fillText("Время вышло!", canvas.width/2, canvas.height/4);
-  ctx.fillText(`Ваш счёт: ${lastScore}`, canvas.width/2, canvas.height/2);
+  ctx.fillText("Время вышло!", canvas.width / 2, canvas.height / 4);
+  ctx.fillText(`Ваш счёт: ${lastScore}`, canvas.width / 2, canvas.height / 2);
   ctx.font = "24px Arial";
-  ctx.fillText("Клик - в меню", canvas.width/2, canvas.height - 50);
+  ctx.fillText("Клик - в меню", canvas.width / 2, canvas.height - 50);
 }
 
 function startGame() {
