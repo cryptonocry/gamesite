@@ -3,13 +3,14 @@ import { Digit } from "./digit.js";
 export const CELL_SIZE = 80;
 export const CHUNK_SIZE = 20;
 
-// Объекты игрового поля
-export let cells = {}; // ключ "x_y" → Digit
+// Глобальные объекты игрового поля
+export let cells = {}; // { "x_y": Digit }
 export let generatedChunks = new Set();
 export let folderScores = [0, 0];
 export const folderNames = ["Перевёрнутые", "Иная анимация"];
 
-export function getChunkCoords(cx, cy) {
+// Генерация координат внутри чанка
+function getChunkCoords(cx, cy) {
   const coords = [];
   const baseX = cx * CHUNK_SIZE;
   const baseY = cy * CHUNK_SIZE;
@@ -21,8 +22,10 @@ export function getChunkCoords(cx, cy) {
   return coords;
 }
 
-export function generateClusterInChunk(cx, cy, anomaly, minSize = 5, maxSize = 9) {
-  let allCoords = getChunkCoords(cx, cy);
+// Генерация кластера аномалий (BFS)
+function generateClusterInChunk(cx, cy, anomaly, minSize = 5, maxSize = 9) {
+  const allCoords = getChunkCoords(cx, cy);
+  // Перемешиваем
   for (let i = allCoords.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [allCoords[i], allCoords[j]] = [allCoords[j], allCoords[i]];
@@ -61,6 +64,7 @@ export function generateClusterInChunk(cx, cy, anomaly, minSize = 5, maxSize = 9
   }
 }
 
+// Генерация одного чанка
 export function generateChunk(cx, cy) {
   const chunkKey = `${cx}_${cy}`;
   if (generatedChunks.has(chunkKey)) return;
@@ -72,15 +76,19 @@ export function generateChunk(cx, cy) {
     const digit = new Digit(coord.x, coord.y, value, Digit.ANOMALY_NONE);
     cells[key] = digit;
   }
+  // Создаем кластеры перевёрнутых и странных
   generateClusterInChunk(cx, cy, Digit.ANOMALY_UPSIDE);
   generateClusterInChunk(cx, cy, Digit.ANOMALY_STRANGE);
-  const numClusters = Math.floor((2 * 1) - 2); // difficultyFactor = 1
+
+  // Можно добавить дополнительные кластеры (сложность)
+  let numClusters = Math.floor((2 * 1) - 2); // difficultyFactor = 1
   for (let i = 0; i < numClusters; i++) {
     const anomaly = (Math.random() < 0.5) ? Digit.ANOMALY_UPSIDE : Digit.ANOMALY_STRANGE;
     generateClusterInChunk(cx, cy, anomaly);
   }
 }
 
+// Проверяем, какие чанки видны на экране
 export function ensureVisibleChunks(cameraX, cameraY, canvasWidth, canvasHeight) {
   const leftWorld = -cameraX / CELL_SIZE;
   const topWorld = -cameraY / CELL_SIZE;
@@ -97,17 +105,21 @@ export function ensureVisibleChunks(cameraX, cameraY, canvasWidth, canvasHeight)
   }
 }
 
+// Отрисовка всех видимых цифр
 export function drawCells(ctx, cameraX, cameraY, canvasWidth, canvasHeight) {
   const currentTime = performance.now();
   for (let key in cells) {
-    const pos = cells[key].screenPosition(cameraX, cameraY, currentTime);
+    // Проверка на выход за экран
+    const digit = cells[key];
+    const pos = digit.screenPosition(cameraX, cameraY, currentTime);
     if (pos.x < -CELL_SIZE || pos.x > canvasWidth + CELL_SIZE ||
         pos.y < -CELL_SIZE || pos.y > canvasHeight + CELL_SIZE)
       continue;
-    cells[key].draw(ctx, cameraX, cameraY, currentTime);
+    digit.draw(ctx, cameraX, cameraY, currentTime);
   }
 }
 
+// BFS для сбора по значению
 export function bfsCollectValue(sx, sy) {
   const key = `${sx}_${sy}`;
   if (!cells[key]) return [];
@@ -136,6 +148,7 @@ export function bfsCollectValue(sx, sy) {
   return group;
 }
 
+// BFS для сбора по аномалии
 export function bfsCollectAnomaly(sx, sy, anomaly) {
   const key = `${sx}_${sy}`;
   if (!cells[key] || cells[key].anomaly !== anomaly) return [];
@@ -149,7 +162,7 @@ export function bfsCollectAnomaly(sx, sy, anomaly) {
     group.push(current);
     const parts = current.split("_").map(Number);
     const cx = parts[0], cy = parts[1];
-    const directions = [[1,0],[-1,0],[0,1],[0,-1]];
+    const directions = [[1,0],[ -1,0],[0,1],[0,-1]];
     for (let d of directions) {
       const nx = cx + d[0], ny = cy + d[1];
       const nkey = `${nx}_${ny}`;
@@ -163,12 +176,14 @@ export function bfsCollectAnomaly(sx, sy, anomaly) {
   return group;
 }
 
+// Поиск ближайшей цифры под мышью
 export function getClickedDigit(mouseX, mouseY, cameraX, cameraY) {
-  const currentTime = performance.now();
   let closestKey = null;
   let closestDist = Infinity;
+  const currentTime = performance.now();
   for (let key in cells) {
-    const pos = cells[key].screenPosition(cameraX, cameraY, currentTime);
+    const digit = cells[key];
+    const pos = digit.screenPosition(cameraX, cameraY, currentTime);
     const dx = mouseX - pos.x;
     const dy = mouseY - pos.y;
     const dist = Math.sqrt(dx*dx + dy*dy);
