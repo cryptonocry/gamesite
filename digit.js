@@ -5,41 +5,52 @@ export class Digit {
     this.value = value;
     this.anomaly = anomaly; // 0: нет, 1: перевёрнутая, 2: странная
     this.spawnTime = spawnTime;
+
     this.baseAmplitude = 5.0;
     this.baseSpeed = 2.0;
     if (this.anomaly === Digit.ANOMALY_STRANGE) {
       this.baseAmplitude *= 2.0;
       this.baseSpeed *= 1.6;
     }
-    // Случайный фазовый сдвиг от 0 до 2π
+
+    // Случайный фазовый сдвиг
     this.phaseOffset = Math.random() * Math.PI * 2;
+
+    // Анимация появления
     this.appearDelay = Math.random() * 1000;
     this.appearDuration = 300 + Math.random() * 400;
     this.appearStart = null;
   }
 
   screenPosition(cameraX, cameraY, currentTime) {
-    const baseX = this.gx * 80 + cameraX;
-    const baseY = this.gy * 80 + cameraY;
+    const CELL_SIZE = 80;
+    const baseX = this.gx * CELL_SIZE + cameraX;
+    const baseY = this.gy * CELL_SIZE + cameraY;
+
     const dt = (currentTime - this.spawnTime) / 1000;
     const angle = this.baseSpeed * dt + this.phaseOffset;
     let dx = this.baseAmplitude * Math.cos(angle);
     let dy = this.baseAmplitude * Math.sin(angle);
+
     const age = currentTime - this.spawnTime;
     if (age < 1000) {
       const factor = age / 1000;
       dx *= factor;
       dy *= factor;
     }
+
     if (this.appearStart === null && age >= this.appearDelay) {
       this.appearStart = currentTime;
     }
-    let scale = 1.0, alpha = 1.0;
+
+    let scale = 1.0;
+    let alpha = 1.0;
     if (this.appearStart !== null) {
       const progress = Math.min(1.0, (currentTime - this.appearStart) / this.appearDuration);
       scale = progress;
       alpha = progress;
     }
+
     return { x: baseX + dx, y: baseY + dy, scale, alpha };
   }
 
@@ -47,13 +58,17 @@ export class Digit {
     const pos = this.screenPosition(cameraX, cameraY, currentTime);
     let finalScale = pos.scale;
     if (this.anomaly === Digit.ANOMALY_STRANGE) {
-      const pulsation = 0.2 * Math.sin(this.baseSpeed * 0.7 * ((currentTime - this.spawnTime) / 1000) + this.phaseOffset);
+      const pulsation = 0.2 * Math.sin(
+        this.baseSpeed * 0.7 * ((currentTime - this.spawnTime) / 1000) + this.phaseOffset
+      );
       finalScale *= (1.0 + pulsation);
     }
+
     ctx.save();
     ctx.globalAlpha = pos.alpha;
     ctx.font = `${24 * finalScale}px Arial`;
     ctx.fillStyle = "#7AC0D6";
+
     if (this.anomaly === Digit.ANOMALY_UPSIDE) {
       ctx.save();
       ctx.translate(pos.x, pos.y);
@@ -79,7 +94,7 @@ export class FlyingDigit {
     this.endX = ex;
     this.endY = ey;
     this.startTime = startTime;
-    this.duration = duration;
+    this.duration = duration; // мс
   }
 
   updatePosition(currentTime) {
