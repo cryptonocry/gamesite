@@ -98,20 +98,20 @@ class Digit {
       this.baseAmplitude *= 2.0;
       this.baseSpeed *= 1.6;
     }
-    // Увеличиваем разброс, чтобы анимация была менее синхронной
-    this.phaseOffset = Math.random() * 200;
+    // Случайный phaseOffset для независимой анимации (без учета координат)
+    this.phaseOffset = Math.random() * 100;
     this.appearDelay = Math.random() * 1000; // мс
     this.appearDuration = 300 + Math.random() * 400; // мс
     this.appearStart = null;
   }
-  // Вычисляем позицию с учётом анимации
+  // Метод вычисления позиции цифры с учетом анимации появления и плавного смещения
   screenPosition(cameraX, cameraY, currentTime) {
     let baseX = this.gx * CELL_SIZE + cameraX;
     let baseY = this.gy * CELL_SIZE + cameraY;
-    // Добавляем смещение с учётом координат для разнообразия
+    // Используем только phaseOffset для анимации (без добавления координат)
     let dt = (currentTime - this.phaseOffset) / 1000;
-    let dx = this.baseAmplitude * Math.cos(this.baseSpeed * dt + this.gx);
-    let dy = this.baseAmplitude * Math.sin(this.baseSpeed * dt + this.gy);
+    let dx = this.baseAmplitude * Math.cos(this.baseSpeed * dt);
+    let dy = this.baseAmplitude * Math.sin(this.baseSpeed * dt);
     let age = currentTime - this.spawnTime;
     if (age < 1000) {
       let factor = age / 1000;
@@ -130,11 +130,11 @@ class Digit {
     }
     return { x: baseX + dx, y: baseY + dy, scale: scale, alpha: alpha };
   }
-  // Отрисовка цифры с учётом особенностей анимации
+  // Отрисовка цифры
   draw(ctx, cameraX, cameraY, currentTime) {
     let pos = this.screenPosition(cameraX, cameraY, currentTime);
     let finalScale = pos.scale;
-    // Для "странной" аномалии добавляем пульсацию, аналогично оригиналу
+    // Для аномалии "Иная анимация" добавляем пульсацию
     if (this.anomaly === Digit.ANOMALY_STRANGE) {
       let pulsation = 0.2 * Math.sin(this.baseSpeed * 0.7 * currentTime/1000 + this.phaseOffset);
       finalScale *= (1.0 + pulsation);
@@ -425,7 +425,7 @@ canvas.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-// Обработка кликов – теперь в режиме игры и в меню работают клики
+// Обработка кликов – в режиме игры и меню
 canvas.addEventListener("click", (e) => {
   let rect = canvas.getBoundingClientRect();
   let mouseX = e.clientX - rect.left;
