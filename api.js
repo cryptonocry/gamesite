@@ -1,4 +1,4 @@
-// Replace these URLs with your actual Xano endpoints if needed
+// Replace these URLs with your actual Xano endpoints
 const XANO_GET_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_get";
 const XANO_POST_URL = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_post";
 
@@ -24,7 +24,7 @@ export async function fetchAllParticipantsFromXano() {
     const response = await fetch(XANO_GET_URL);
     const data = await response.json();
     console.log("Fetched records from Xano:", data);
-    return data; // array of {id, nickname, wallet, score, ...}
+    return data; // array of records
   } catch (e) {
     console.error("Error fetching data from Xano:", e);
     return [];
