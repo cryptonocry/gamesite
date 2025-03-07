@@ -41,7 +41,7 @@ function generateClusterInChunk(cx, cy, anomaly, minSize = 5, maxSize = 9) {
         const current = queue.shift();
         const parts = current.split("_").map(Number);
         const cx2 = parts[0], cy2 = parts[1];
-        const directions = [[1,0],[-1,0],[0,1],[0,-1]];
+        const directions = [[1,0], [-1,0], [0,1], [0,-1]];
         for (let d of directions) {
           const nx = cx2 + d[0], ny = cy2 + d[1];
           const nkey = `${nx}_${ny}`;
