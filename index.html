@@ -28,21 +28,18 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    /* Login overlay – only one input for wallet */
+    /* Login overlay */
     #loginContainer {
       position: absolute;
-      top: 0; 
-      left: 0;
-      width: 100%; 
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       display: none;
       z-index: 101;
       background: rgba(0, 0, 0, 0.8);
     }
     #loginContent {
       position: absolute;
-      top: 50%; 
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       background: #021013;
       padding: 20px;
@@ -68,10 +65,8 @@
     /* Records overlay */
     #recordsContainer {
       position: absolute;
-      top: 0; 
-      left: 0;
-      width: 100%; 
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       display: none;
       z-index: 102;
       background: rgba(0, 0, 0, 0.9);
@@ -112,10 +107,11 @@
   <!-- Fullscreen button -->
   <button id="fullscreenButton">Fullscreen</button>
   
-  <!-- Login overlay – only BTC Taproot wallet (no nickname) -->
+  <!-- Login overlay (Nickname + BTC Taproot wallet) -->
   <div id="loginContainer">
     <div id="loginContent">
       <h2>Enter the game</h2>
+      <input id="nicknameInput" type="text" placeholder="Nickname (1-10 chars)">
       <input id="walletInput" type="text" placeholder="BTC Taproot wallet (62 chars)">
       <button id="loginButton">Start Game</button>
     </div>
