@@ -2,7 +2,7 @@
 const XANO_GET_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_get";
 const XANO_POST_URL = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_post";
 // PUT endpoint for updating an existing record: /gamerecords_put/{id}
-const XANO_PUT_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_put"; // append /{id} for actual
+const XANO_PUT_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords/{gamerecords_id}"; // append /{id} for actual
 
 export async function addParticipantToXano(wallet, score) {
   try {
