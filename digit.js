@@ -12,7 +12,6 @@ export class Digit {
       this.baseAmplitude *= 2.0;
       this.baseSpeed *= 1.6;
     }
-    // Random phase offset
     this.phaseOffset = Math.random() * Math.PI * 2;
     this.appearDelay = Math.random() * 1000;
     this.appearDuration = 300 + Math.random() * 400;
@@ -23,12 +22,10 @@ export class Digit {
     const CELL_SIZE = 80;
     const baseX = this.gx * CELL_SIZE + cameraX;
     const baseY = this.gy * CELL_SIZE + cameraY;
-
     const dt = (currentTime - this.spawnTime) / 1000;
     const angle = this.baseSpeed * dt + this.phaseOffset;
     let dx = this.baseAmplitude * Math.cos(angle);
     let dy = this.baseAmplitude * Math.sin(angle);
-
     const age = currentTime - this.spawnTime;
     if (age < 1000) {
       const factor = age / 1000;
@@ -38,15 +35,12 @@ export class Digit {
     if (this.appearStart === null && age >= this.appearDelay) {
       this.appearStart = currentTime;
     }
-
-    let scale = 1.0;
-    let alpha = 1.0;
+    let scale = 1.0, alpha = 1.0;
     if (this.appearStart !== null) {
       const progress = Math.min(1.0, (currentTime - this.appearStart) / this.appearDuration);
       scale = progress;
       alpha = progress;
     }
-
     return { x: baseX + dx, y: baseY + dy, scale, alpha };
   }
 
@@ -54,9 +48,7 @@ export class Digit {
     const pos = this.screenPosition(cameraX, cameraY, currentTime);
     let finalScale = pos.scale;
     if (this.anomaly === Digit.ANOMALY_STRANGE) {
-      const pulsation = 0.2 * Math.sin(
-        this.baseSpeed * 0.7 * ((currentTime - this.spawnTime) / 1000) + this.phaseOffset
-      );
+      const pulsation = 0.2 * Math.sin(this.baseSpeed * 0.7 * ((currentTime - this.spawnTime) / 1000) + this.phaseOffset);
       finalScale *= (1.0 + pulsation);
     }
     ctx.save();
@@ -88,7 +80,7 @@ export class FlyingDigit {
     this.endX = ex;
     this.endY = ey;
     this.startTime = startTime;
-    this.duration = duration; // ms
+    this.duration = duration;
   }
 
   updatePosition(currentTime) {
