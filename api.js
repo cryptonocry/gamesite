@@ -1,40 +1,20 @@
-// Замените URL-ы на ваши реальные эндпоинты Xano
-export const XANO_GET_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_get";
-export const XANO_POST_URL = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_post";
-// Мы будем делать PUT /gamerecords/{id}
-export const XANO_PUT_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords";
+// Replace these URLs with your actual Xano endpoints
+const XANO_GET_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_get";
+const XANO_POST_URL = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_post";
 
-export async function addParticipantToXano(wallet, score) {
+export async function addParticipantToXano(nickname, wallet, score) {
   try {
-    const body = { wallet, score };
+    const body = { nickname, wallet, score };
     const response = await fetch(XANO_POST_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
     const data = await response.json();
-    console.log("Added new record to Xano:", data);
+    console.log("Added result to Xano:", data);
     return data;
   } catch (e) {
-    console.error("Error adding record to Xano:", e);
-    return null;
-  }
-}
-
-export async function updateParticipantOnXano(recordId, wallet, score) {
-  try {
-    const url = `${XANO_PUT_URL}/${recordId}`;
-    const body = { wallet, score };
-    const response = await fetch(url, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    const data = await response.json();
-    console.log("Updated record on Xano:", data);
-    return data;
-  } catch (e) {
-    console.error("Error updating record on Xano:", e);
+    console.error("Error sending data to Xano:", e);
     return null;
   }
 }
@@ -44,9 +24,9 @@ export async function fetchAllParticipantsFromXano() {
     const response = await fetch(XANO_GET_URL);
     const data = await response.json();
     console.log("Fetched records from Xano:", data);
-    return data;
+    return data; // array of records
   } catch (e) {
-    console.error("Error fetching records from Xano:", e);
+    console.error("Error fetching data from Xano:", e);
     return [];
   }
 }

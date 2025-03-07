@@ -23,7 +23,6 @@ function getChunkCoords(cx, cy) {
 
 function generateClusterInChunk(cx, cy, anomaly, minSize = 5, maxSize = 9) {
   const allCoords = getChunkCoords(cx, cy);
-  // Shuffle coordinates
   for (let i = allCoords.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [allCoords[i], allCoords[j]] = [allCoords[j], allCoords[i]];
@@ -41,7 +40,7 @@ function generateClusterInChunk(cx, cy, anomaly, minSize = 5, maxSize = 9) {
         const current = queue.shift();
         const parts = current.split("_").map(Number);
         const cx2 = parts[0], cy2 = parts[1];
-        const directions = [[1,0], [-1,0], [0,1], [0,-1]];
+        const directions = [[1,0],[-1,0],[0,1],[0,-1]];
         for (let d of directions) {
           const nx = cx2 + d[0], ny = cy2 + d[1];
           const nkey = `${nx}_${ny}`;
@@ -174,7 +173,7 @@ export function getClickedDigit(mouseX, mouseY, cameraX, cameraY) {
     const pos = digit.screenPosition(cameraX, cameraY, currentTime);
     const dx = mouseX - pos.x;
     const dy = mouseY - pos.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const dist = Math.sqrt(dx*dx + dy*dy);
     if (dist < 20 && dist < closestDist) {
       closestKey = key;
       closestDist = dist;
