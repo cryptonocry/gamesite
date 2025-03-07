@@ -1,8 +1,11 @@
 // Replace these URLs with your actual Xano endpoints
-const XANO_GET_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_get";
-const XANO_POST_URL = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_post";
-// PUT endpoint for updating an existing record: /gamerecords_put/{id}
-const XANO_PUT_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords/{gamerecords_id}"; // append /{id} for actual
+// GET:    returns all records
+// POST:   creates a new record
+// PUT:    updates an existing record by {id}
+export const XANO_GET_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_get";
+export const XANO_POST_URL = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_post";
+export const XANO_PUT_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords"; 
+// we will do PUT /gamerecords/{id}
 
 export async function addParticipantToXano(wallet, score) {
   try {
@@ -23,6 +26,7 @@ export async function addParticipantToXano(wallet, score) {
 
 export async function updateParticipantOnXano(recordId, wallet, score) {
   try {
+    // PUT /gamerecords/{id}
     const url = `${XANO_PUT_URL}/${recordId}`;
     const body = { wallet, score };
     const response = await fetch(url, {
@@ -44,7 +48,7 @@ export async function fetchAllParticipantsFromXano() {
     const response = await fetch(XANO_GET_URL);
     const data = await response.json();
     console.log("Fetched records from Xano:", data);
-    return data; // array of { id, wallet, score, ... }
+    return data; // array of { id, wallet, score, ...}
   } catch (e) {
     console.error("Error fetching records from Xano:", e);
     return [];
