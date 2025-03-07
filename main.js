@@ -16,9 +16,9 @@ const canvas              = document.getElementById("gameCanvas");
 const ctx                 = canvas.getContext("2d");
 const fullscreenButton    = document.getElementById("fullscreenButton");
 const loginContainer      = document.getElementById("loginContainer");
-const loginButton         = document.getElementById("loginButton");
-const nicknameInput       = document.getElementById("nicknameInput");
+// Удалён nicknameInput, т.к. больше не используется
 const walletInput         = document.getElementById("walletInput");
+const loginButton         = document.getElementById("loginButton");
 const recordsContainer    = document.getElementById("recordsContainer");
 const recordsTableContainer = document.getElementById("recordsTableContainer");
 const closeRecordsButton  = document.getElementById("closeRecordsButton");
@@ -29,7 +29,7 @@ const closeRecordsButton  = document.getElementById("closeRecordsButton");
 const START_TIME    = 60;
 const FOLDER_HEIGHT = 80;
 let gameState  = "menu"; // "menu", "game", "game_over"
-let currentPlayer = null; // { nickname, wallet, score }
+let currentPlayer = null; // { wallet, score }
 let scoreTotal = 0;
 let timeLeft   = START_TIME;
 let flyingDigits  = [];
@@ -71,15 +71,7 @@ resizeCanvas();
 // LOGIN EVENT (with validation)
 // --------------------------------
 loginButton.addEventListener("click", () => {
-  const nickname = nicknameInput.value.trim();
   const wallet   = walletInput.value.trim();
-
-  // Validate nickname: 1–10 characters, letters, digits, underscore only
-  const nickRegex = /^[A-Za-z0-9_]{1,10}$/;
-  if (!nickRegex.test(nickname)) {
-    alert("Invalid nickname! Only English letters, digits, and underscores are allowed (1–10 characters).");
-    return;
-  }
 
   // Validate wallet: exactly 62 characters, lowercase letters and digits only
   const walletRegex = /^[a-z0-9]{62}$/;
@@ -88,7 +80,7 @@ loginButton.addEventListener("click", () => {
     return;
   }
 
-  currentPlayer = { nickname, wallet, score: 0 };
+  currentPlayer = { wallet, score: 0 };
   console.log("Login successful:", currentPlayer);
   loginContainer.style.display = "none";
   startGame();
@@ -329,7 +321,7 @@ function updateGame(dt) {
     lastScore = scoreTotal;
     if (currentPlayer) {
       currentPlayer.score = scoreTotal;
-      addParticipantToXano(currentPlayer.nickname, currentPlayer.wallet, scoreTotal);
+      addParticipantToXano("", currentPlayer.wallet, scoreTotal);
     }
     return;
   }
@@ -356,11 +348,6 @@ function gameLoop() {
   const currentTime = performance.now();
   const dt = currentTime - lastUpdateTime;
   lastUpdateTime = currentTime;
-
-  // Debug: log gameState every 5 seconds (optional)
-  // if (Math.floor(currentTime / 5000) !== Math.floor((currentTime - dt) / 5000)) {
-  //   console.log("Game state:", gameState);
-  // }
 
   switch (gameState) {
     case "menu":
