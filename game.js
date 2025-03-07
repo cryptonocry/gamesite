@@ -23,7 +23,7 @@ function getChunkCoords(cx, cy) {
 
 function generateClusterInChunk(cx, cy, anomaly, minSize = 5, maxSize = 9) {
   const allCoords = getChunkCoords(cx, cy);
-  // Shuffle coordinates
+  // Shuffle
   for (let i = allCoords.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [allCoords[i], allCoords[j]] = [allCoords[j], allCoords[i]];
@@ -76,6 +76,7 @@ export function generateChunk(cx, cy) {
   // Create guaranteed clusters for Upside and Strange anomalies
   generateClusterInChunk(cx, cy, Digit.ANOMALY_UPSIDE);
   generateClusterInChunk(cx, cy, Digit.ANOMALY_STRANGE);
+
   // Additional clusters (difficultyFactor = 1)
   const numClusters = Math.floor((2 * 1) - 2);
   for (let i = 0; i < numClusters; i++) {
