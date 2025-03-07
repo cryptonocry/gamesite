@@ -2,7 +2,6 @@ import { fetchAllParticipantsFromXano } from "./api.js";
 
 export async function showRecordsOverlay(recordsTableContainer, recordsContainer, currentPlayer) {
   const records = await fetchAllParticipantsFromXano();
-  // Отображаем только кошелёк и счёт
   let html = "<table><tr><th>Wallet</th><th>Score</th></tr>";
   records.forEach((rec) => {
     html += `<tr>
