@@ -9,44 +9,39 @@ import {
 } from "./game.js";
 import { showRecordsOverlay } from "./ui.js";
 
-// At the very start, to see if script loads
 console.log("main.js loaded!");
-
-// GAME PARAMETERS
-let gameState = "menu"; // start with menu
+let gameState = "menu";
 console.log("Initial gameState =", gameState);
 
-const START_TIME    = 60;
+const START_TIME = 60;
 const FOLDER_HEIGHT = 80;
 let currentPlayer = null; // { wallet, score }
 let scoreTotal = 0;
-let timeLeft   = START_TIME;
-let flyingDigits  = [];
+let timeLeft = START_TIME;
+let flyingDigits = [];
 let timeAnimations = {};
 let slotsToRespawn = {};
 
-// Camera
 const canvas = document.getElementById("gameCanvas");
-const ctx    = canvas.getContext("2d");
+const ctx = canvas.getContext("2d");
 let cameraX = canvas.width / 2;
 let cameraY = canvas.height / 2;
 let isDragging = false;
-let dragStart  = { x: 0, y: 0 };
-let cameraStart= { x: 0, y: 0 };
+let dragStart = { x: 0, y: 0 };
+let cameraStart = { x: 0, y: 0 };
 
 let lastUpdateTime = performance.now();
 let lastScore = 0;
 
-// HTML elements
-const fullscreenButton    = document.getElementById("fullscreenButton");
-const loginContainer      = document.getElementById("loginContainer");
-const loginButton         = document.getElementById("loginButton");
-const walletInput         = document.getElementById("walletInput");
-const recordsContainer    = document.getElementById("recordsContainer");
+const fullscreenButton = document.getElementById("fullscreenButton");
+const loginContainer = document.getElementById("loginContainer");
+const loginButton = document.getElementById("loginButton");
+const walletInput = document.getElementById("walletInput");
+const recordsContainer = document.getElementById("recordsContainer");
 const recordsTableContainer = document.getElementById("recordsTableContainer");
-const closeRecordsButton  = document.getElementById("closeRecordsButton");
+const closeRecordsButton = document.getElementById("closeRecordsButton");
 
-// FULLSCREEN
+// Fullscreen
 fullscreenButton.addEventListener("click", () => {
   if (!document.fullscreenElement) {
     canvas.requestFullscreen();
@@ -55,7 +50,7 @@ fullscreenButton.addEventListener("click", () => {
   }
 });
 
-// RESIZE CANVAS
+// Resize canvas
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -63,32 +58,29 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// LOGIN EVENT – only wallet
+// Login – only wallet
 loginButton.addEventListener("click", async () => {
   console.log("loginButton clicked!");
   const wallet = walletInput.value.trim();
   console.log("Wallet input:", wallet);
-
-  // Validate wallet: exactly 62 chars, a–z0–9
   const walletRegex = /^[a-z0-9]{62}$/;
   if (!walletRegex.test(wallet)) {
     alert("Invalid BTC Taproot wallet! Must be 62 lowercase letters/digits.");
     return;
   }
-
   currentPlayer = { wallet, score: 0 };
   console.log("Login successful:", currentPlayer);
   loginContainer.style.display = "none";
   startGame();
 });
 
-// CLOSE RECORDS
+// Close records overlay
 closeRecordsButton.addEventListener("click", () => {
   recordsContainer.style.display = "none";
   gameState = "menu";
 });
 
-// CANVAS CLICK
+// Canvas click handler
 canvas.addEventListener("click", async (e) => {
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
@@ -103,7 +95,7 @@ canvas.addEventListener("click", async (e) => {
       if (mouseX >= canvas.width / 2 - 150 && mouseX <= canvas.width / 2 + 150 &&
           mouseY >= itemY - optionAreaHeight / 2 && mouseY <= itemY + optionAreaHeight / 2) {
         const option = menuOptions[i];
-        console.log("Menu clicked option:", option);
+        console.log("Menu option clicked:", option);
         if (option === "Start Game") {
           if (!currentPlayer) {
             loginContainer.style.display = "block";
@@ -128,7 +120,6 @@ canvas.addEventListener("click", async (e) => {
       const anomaly = digit.anomaly;
       const currentTime = performance.now();
 
-      // BFS for anomaly
       if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
         const group = bfsCollectAnomaly(gx, gy, anomaly);
         if (group.length >= 5) {
@@ -145,14 +136,13 @@ canvas.addEventListener("click", async (e) => {
           }
           scoreTotal += countDig * 10;
           folderScores[idx] += countDig;
-          timeLeft += 1; // +1 second
+          timeLeft += 1;
           const plusAnim = new TimePlusAnimation(`+1 s`, 200, 20, currentTime, 2000);
           timeAnimations[Date.now()] = plusAnim;
           return;
         }
       }
 
-      // BFS for value
       const groupVal = bfsCollectValue(gx, gy);
       if (groupVal.length >= 5) {
         const fx = canvas.width / 4;
@@ -178,7 +168,7 @@ canvas.addEventListener("click", async (e) => {
   }
 });
 
-// CAMERA DRAG
+// Camera drag (right mouse button)
 canvas.addEventListener("mousedown", (e) => {
   if (e.button === 2) {
     isDragging = true;
@@ -201,7 +191,7 @@ canvas.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-// DRAW MENU
+// Draw Menu
 function drawMenu() {
   ctx.fillStyle = "#021013";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -232,7 +222,6 @@ function drawGameOver() {
   ctx.fillText("Click to return to menu", canvas.width / 2, canvas.height - 50);
 }
 
-// DRAW GAME
 function drawGame() {
   ctx.fillStyle = "#021013";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -259,7 +248,7 @@ function drawGame() {
     ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + canvas.width / 4, rectY + FOLDER_HEIGHT / 2);
   }
 
-  // Score with background
+  // Draw Score with background
   ctx.save();
   ctx.font = "24px Arial";
   const scoreText = `Score: ${scoreTotal}`;
@@ -272,7 +261,7 @@ function drawGame() {
   ctx.fillText(scoreText, 10, 30);
   ctx.restore();
 
-  // Timer with background
+  // Draw Timer with background
   ctx.save();
   ctx.font = "24px Arial";
   const timerText = `${Math.floor(timeLeft)} s.`;
@@ -287,7 +276,7 @@ function drawGame() {
   ctx.fillText(timerText, timerX, timerY);
   ctx.restore();
 
-  // Time-plus animations
+  // Draw time-plus animations
   for (const k in timeAnimations) {
     const anim = timeAnimations[k];
     const keep = anim.draw(ctx, currentTime);
@@ -297,7 +286,6 @@ function drawGame() {
   }
 }
 
-// UPDATE GAME
 async function updateGame(dt) {
   const currentTime = performance.now();
   timeLeft -= dt / 1000;
@@ -306,18 +294,15 @@ async function updateGame(dt) {
     lastScore = scoreTotal;
     if (currentPlayer) {
       currentPlayer.score = scoreTotal;
-      // Check existing record for this wallet
       const records = await fetchAllParticipantsFromXano();
       const existing = records.find(rec => rec.wallet === currentPlayer.wallet);
       if (existing) {
-        // If new score is better, update
         if (scoreTotal > existing.score) {
           await updateParticipantOnXano(existing.id, currentPlayer.wallet, scoreTotal);
         } else {
           console.log("New score is not better than existing record. Not updating.");
         }
       } else {
-        // If no record, create new
         await addParticipantToXano(currentPlayer.wallet, scoreTotal);
       }
     }
@@ -339,11 +324,7 @@ async function updateGame(dt) {
   }
 }
 
-// MAIN LOOP
 async function gameLoop() {
-  // For debugging
-  // console.log("gameLoop, state =", gameState);
-
   const currentTime = performance.now();
   const dt = currentTime - lastUpdateTime;
   lastUpdateTime = currentTime;
@@ -364,10 +345,8 @@ async function gameLoop() {
 }
 requestAnimationFrame(gameLoop);
 
-// START GAME
 function startGame() {
   console.log("startGame() called, switching to 'game'");
-  // Reset everything
   for (const key in cells) delete cells[key];
   generatedChunks.clear();
   folderScores[0] = 0;
@@ -386,7 +365,6 @@ function startGame() {
   gameState = "game";
 }
 
-// DRAW GAME OVER
 function drawGameOver() {
   ctx.fillStyle = "#021013";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
