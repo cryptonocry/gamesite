@@ -9,21 +9,15 @@ import {
 } from "./game.js";
 import { showRecordsOverlay } from "./ui.js";
 
-// HTML ELEMENTS
-const canvas              = document.getElementById("gameCanvas");
-const ctx                 = canvas.getContext("2d");
-const fullscreenButton    = document.getElementById("fullscreenButton");
-const loginContainer      = document.getElementById("loginContainer");
-const loginButton         = document.getElementById("loginButton");
-const walletInput         = document.getElementById("walletInput");
-const recordsContainer    = document.getElementById("recordsContainer");
-const recordsTableContainer = document.getElementById("recordsTableContainer");
-const closeRecordsButton  = document.getElementById("closeRecordsButton");
+// At the very start, to see if script loads
+console.log("main.js loaded!");
 
 // GAME PARAMETERS
+let gameState = "menu"; // start with menu
+console.log("Initial gameState =", gameState);
+
 const START_TIME    = 60;
 const FOLDER_HEIGHT = 80;
-let gameState  = "menu"; // "menu", "game", "game_over"
 let currentPlayer = null; // { wallet, score }
 let scoreTotal = 0;
 let timeLeft   = START_TIME;
@@ -32,6 +26,8 @@ let timeAnimations = {};
 let slotsToRespawn = {};
 
 // Camera
+const canvas = document.getElementById("gameCanvas");
+const ctx    = canvas.getContext("2d");
 let cameraX = canvas.width / 2;
 let cameraY = canvas.height / 2;
 let isDragging = false;
@@ -40,6 +36,15 @@ let cameraStart= { x: 0, y: 0 };
 
 let lastUpdateTime = performance.now();
 let lastScore = 0;
+
+// HTML elements
+const fullscreenButton    = document.getElementById("fullscreenButton");
+const loginContainer      = document.getElementById("loginContainer");
+const loginButton         = document.getElementById("loginButton");
+const walletInput         = document.getElementById("walletInput");
+const recordsContainer    = document.getElementById("recordsContainer");
+const recordsTableContainer = document.getElementById("recordsTableContainer");
+const closeRecordsButton  = document.getElementById("closeRecordsButton");
 
 // FULLSCREEN
 fullscreenButton.addEventListener("click", () => {
@@ -60,7 +65,9 @@ resizeCanvas();
 
 // LOGIN EVENT – only wallet
 loginButton.addEventListener("click", async () => {
+  console.log("loginButton clicked!");
   const wallet = walletInput.value.trim();
+  console.log("Wallet input:", wallet);
 
   // Validate wallet: exactly 62 chars, a–z0–9
   const walletRegex = /^[a-z0-9]{62}$/;
@@ -96,6 +103,7 @@ canvas.addEventListener("click", async (e) => {
       if (mouseX >= canvas.width / 2 - 150 && mouseX <= canvas.width / 2 + 150 &&
           mouseY >= itemY - optionAreaHeight / 2 && mouseY <= itemY + optionAreaHeight / 2) {
         const option = menuOptions[i];
+        console.log("Menu clicked option:", option);
         if (option === "Start Game") {
           if (!currentPlayer) {
             loginContainer.style.display = "block";
@@ -137,7 +145,7 @@ canvas.addEventListener("click", async (e) => {
           }
           scoreTotal += countDig * 10;
           folderScores[idx] += countDig;
-          timeLeft += 1; // +1 second per group
+          timeLeft += 1; // +1 second
           const plusAnim = new TimePlusAnimation(`+1 s`, 200, 20, currentTime, 2000);
           timeAnimations[Date.now()] = plusAnim;
           return;
@@ -159,7 +167,7 @@ canvas.addEventListener("click", async (e) => {
         }
         scoreTotal += cVal * 10;
         folderScores[0] += cVal;
-        timeLeft += 1; // +1 second
+        timeLeft += 1;
         const plusAnim = new TimePlusAnimation(`+1 s`, 200, 20, currentTime, 2000);
         timeAnimations[Date.now()] = plusAnim;
       }
@@ -236,7 +244,7 @@ function drawGame() {
     fd.draw(ctx, currentTime);
   }
 
-  // Draw "folders" at bottom
+  // Draw folders at bottom
   for (let i = 0; i < 2; i++) {
     const rectX = i * canvas.width / 2;
     const rectY = canvas.height - FOLDER_HEIGHT;
@@ -333,6 +341,9 @@ async function updateGame(dt) {
 
 // MAIN LOOP
 async function gameLoop() {
+  // For debugging
+  // console.log("gameLoop, state =", gameState);
+
   const currentTime = performance.now();
   const dt = currentTime - lastUpdateTime;
   lastUpdateTime = currentTime;
@@ -355,7 +366,7 @@ requestAnimationFrame(gameLoop);
 
 // START GAME
 function startGame() {
-  console.log("Game started");
+  console.log("startGame() called, switching to 'game'");
   // Reset everything
   for (const key in cells) delete cells[key];
   generatedChunks.clear();
