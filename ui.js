@@ -7,17 +7,11 @@ function maskWallet(wallet) {
 
 export async function showRecordsOverlay(recordsTableContainer, recordsContainer, currentPlayer) {
   const records = await fetchAllParticipantsFromXano();
-  let html = "<table><tr><th>Nickname</th><th>BTC Wallet</th><th>Score</th></tr>";
-  let currentPlayerIndex = -1;
-  records.forEach((rec, index) => {
+  // Only display wallet (masked) and score
+  let html = "<table><tr><th>Wallet</th><th>Score</th></tr>";
+  records.forEach((rec) => {
     const shortWallet = maskWallet(rec.wallet || "");
-    let rowId = "";
-    if (currentPlayer && rec.nickname === currentPlayer.nickname && rec.wallet === currentPlayer.wallet) {
-      rowId = " id='currentPlayerRow'";
-      currentPlayerIndex = index;
-    }
-    html += `<tr${rowId}>
-               <td>${rec.nickname}</td>
+    html += `<tr>
                <td>${shortWallet}</td>
                <td>${rec.score}</td>
              </tr>`;
@@ -25,11 +19,4 @@ export async function showRecordsOverlay(recordsTableContainer, recordsContainer
   html += "</table>";
   recordsTableContainer.innerHTML = html;
   recordsContainer.style.display = "block";
-
-  setTimeout(() => {
-    const row = document.getElementById("currentPlayerRow");
-    if (row) {
-      row.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, 100);
 }
