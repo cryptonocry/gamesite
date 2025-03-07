@@ -5,7 +5,7 @@
 export const XANO_GET_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_get";
 export const XANO_POST_URL = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords_post";
 export const XANO_PUT_URL  = "https://x8ki-letl-twmt.n7.xano.io/api:7fuLzq6k/gamerecords"; 
-// we will do PUT /gamerecords/{id}
+// We will do PUT /gamerecords/{id}
 
 export async function addParticipantToXano(wallet, score) {
   try {
