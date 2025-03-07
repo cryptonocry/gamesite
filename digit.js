@@ -39,7 +39,8 @@ export class Digit {
       this.appearStart = currentTime;
     }
 
-    let scale = 1.0, alpha = 1.0;
+    let scale = 1.0;
+    let alpha = 1.0;
     if (this.appearStart !== null) {
       const progress = Math.min(1.0, (currentTime - this.appearStart) / this.appearDuration);
       scale = progress;
@@ -87,7 +88,7 @@ export class FlyingDigit {
     this.endX = ex;
     this.endY = ey;
     this.startTime = startTime;
-    this.duration = duration;
+    this.duration = duration; // ms
   }
 
   updatePosition(currentTime) {
