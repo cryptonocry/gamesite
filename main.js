@@ -35,7 +35,7 @@ let lastScore = 0;
 
 const fullscreenButton = document.getElementById("fullscreenButton");
 const loginContainer = document.getElementById("loginContainer");
-// Удалён nicknameInput – теперь поле отсутствует
+// Удалён nicknameInput, т.к. вводится только wallet
 const walletInput = document.getElementById("walletInput");
 const recordsContainer = document.getElementById("recordsContainer");
 const recordsTableContainer = document.getElementById("recordsTableContainer");
@@ -58,7 +58,7 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// Login event – only wallet
+// Login event – только wallet
 loginButton.addEventListener("click", () => {
   const wallet = walletInput.value.trim();
   const walletRegex = /^[a-z0-9]{62}$/;
@@ -292,7 +292,7 @@ function updateGame(dt) {
     lastScore = scoreTotal;
     if (currentPlayer) {
       currentPlayer.score = scoreTotal;
-      // Здесь вызываем API без nickname
+      // Вызываем API без nickname
       addParticipantToXano(currentPlayer.wallet, scoreTotal);
     }
     return;
