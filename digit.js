@@ -53,7 +53,9 @@ export class Digit {
     const pos = this.screenPosition(cameraX, cameraY, currentTime);
     let finalScale = pos.scale;
     if (this.anomaly === Digit.ANOMALY_STRANGE) {
-      const pulsation = 0.2 * Math.sin(this.baseSpeed * 0.7 * ((currentTime - this.spawnTime) / 1000) + this.phaseOffset);
+      const pulsation = 0.2 * Math.sin(
+        this.baseSpeed * 0.7 * ((currentTime - this.spawnTime) / 1000) + this.phaseOffset
+      );
       finalScale *= (1.0 + pulsation);
     }
     ctx.save();
