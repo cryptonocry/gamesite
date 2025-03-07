@@ -1,6 +1,5 @@
 import { fetchAllParticipantsFromXano } from "./api.js";
 
-// Mask the wallet: first 4 chars, then ****, then last 4 chars
 function maskWallet(wallet) {
   if (wallet.length <= 8) return wallet;
   return wallet.substring(0, 4) + "****" + wallet.substring(wallet.length - 4);
