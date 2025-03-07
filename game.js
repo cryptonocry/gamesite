@@ -77,7 +77,7 @@ export function generateChunk(cx, cy) {
   generateClusterInChunk(cx, cy, Digit.ANOMALY_UPSIDE);
   generateClusterInChunk(cx, cy, Digit.ANOMALY_STRANGE);
 
-  // Additional clusters (difficultyFactor = 1)
+  // Additional clusters
   const numClusters = Math.floor((2 * 1) - 2);
   for (let i = 0; i < numClusters; i++) {
     const anomaly = (Math.random() < 0.5) ? Digit.ANOMALY_UPSIDE : Digit.ANOMALY_STRANGE;
