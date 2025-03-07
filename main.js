@@ -1,6 +1,6 @@
 "use strict";
 
-import { addParticipantToXano, fetchAllParticipantsFromXano, updateParticipantOnXano } from "./api.js";
+import { addParticipantToXano } from "./api.js";
 import { Digit, FlyingDigit, TimePlusAnimation } from "./digit.js";
 import { 
   cells, generatedChunks, folderScores, folderNames,
@@ -9,39 +9,46 @@ import {
 } from "./game.js";
 import { showRecordsOverlay } from "./ui.js";
 
-console.log("main.js loaded!");
-let gameState = "menu";
-console.log("Initial gameState =", gameState);
+// --------------------------------
+// HTML ELEMENTS
+// --------------------------------
+const canvas              = document.getElementById("gameCanvas");
+const ctx                 = canvas.getContext("2d");
+const fullscreenButton    = document.getElementById("fullscreenButton");
+const loginContainer      = document.getElementById("loginContainer");
+const loginButton         = document.getElementById("loginButton");
+const nicknameInput       = document.getElementById("nicknameInput");
+const walletInput         = document.getElementById("walletInput");
+const recordsContainer    = document.getElementById("recordsContainer");
+const recordsTableContainer = document.getElementById("recordsTableContainer");
+const closeRecordsButton  = document.getElementById("closeRecordsButton");
 
-const START_TIME = 60;
+// --------------------------------
+// GAME PARAMETERS
+// --------------------------------
+const START_TIME    = 60;
 const FOLDER_HEIGHT = 80;
-let currentPlayer = null; // { wallet, score }
+let gameState  = "menu"; // "menu", "game", "game_over"
+let currentPlayer = null; // { nickname, wallet, score }
 let scoreTotal = 0;
-let timeLeft = START_TIME;
-let flyingDigits = [];
+let timeLeft   = START_TIME;
+let flyingDigits  = [];
 let timeAnimations = {};
 let slotsToRespawn = {};
 
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+// Camera parameters
 let cameraX = canvas.width / 2;
 let cameraY = canvas.height / 2;
 let isDragging = false;
-let dragStart = { x: 0, y: 0 };
-let cameraStart = { x: 0, y: 0 };
+let dragStart  = { x: 0, y: 0 };
+let cameraStart= { x: 0, y: 0 };
 
 let lastUpdateTime = performance.now();
 let lastScore = 0;
 
-const fullscreenButton = document.getElementById("fullscreenButton");
-const loginContainer = document.getElementById("loginContainer");
-const loginButton = document.getElementById("loginButton");
-const walletInput = document.getElementById("walletInput");
-const recordsContainer = document.getElementById("recordsContainer");
-const recordsTableContainer = document.getElementById("recordsTableContainer");
-const closeRecordsButton = document.getElementById("closeRecordsButton");
-
-// Fullscreen
+// --------------------------------
+// FULLSCREEN BUTTON
+// --------------------------------
 fullscreenButton.addEventListener("click", () => {
   if (!document.fullscreenElement) {
     canvas.requestFullscreen();
@@ -50,7 +57,9 @@ fullscreenButton.addEventListener("click", () => {
   }
 });
 
-// Resize canvas
+// --------------------------------
+// RESIZE CANVAS
+// --------------------------------
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -58,29 +67,44 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// Login – only wallet
-loginButton.addEventListener("click", async () => {
-  console.log("loginButton clicked!");
-  const wallet = walletInput.value.trim();
-  console.log("Wallet input:", wallet);
-  const walletRegex = /^[a-z0-9]{62}$/;
-  if (!walletRegex.test(wallet)) {
-    alert("Invalid BTC Taproot wallet! Must be 62 lowercase letters/digits.");
+// --------------------------------
+// LOGIN EVENT (with validation)
+// --------------------------------
+loginButton.addEventListener("click", () => {
+  const nickname = nicknameInput.value.trim();
+  const wallet   = walletInput.value.trim();
+
+  // Validate nickname: 1–10 characters, letters, digits, underscore only
+  const nickRegex = /^[A-Za-z0-9_]{1,10}$/;
+  if (!nickRegex.test(nickname)) {
+    alert("Invalid nickname! Only English letters, digits, and underscores are allowed (1–10 characters).");
     return;
   }
-  currentPlayer = { wallet, score: 0 };
+
+  // Validate wallet: exactly 62 characters, lowercase letters and digits only
+  const walletRegex = /^[a-z0-9]{62}$/;
+  if (!walletRegex.test(wallet)) {
+    alert("Invalid BTC Taproot wallet! It must be exactly 62 characters (lowercase letters and digits only).");
+    return;
+  }
+
+  currentPlayer = { nickname, wallet, score: 0 };
   console.log("Login successful:", currentPlayer);
   loginContainer.style.display = "none";
   startGame();
 });
 
-// Close records overlay
+// --------------------------------
+// CLOSE RECORDS OVERLAY
+// --------------------------------
 closeRecordsButton.addEventListener("click", () => {
   recordsContainer.style.display = "none";
   gameState = "menu";
 });
 
-// Canvas click handler
+// --------------------------------
+// CANVAS CLICK HANDLER
+// --------------------------------
 canvas.addEventListener("click", async (e) => {
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
@@ -95,7 +119,6 @@ canvas.addEventListener("click", async (e) => {
       if (mouseX >= canvas.width / 2 - 150 && mouseX <= canvas.width / 2 + 150 &&
           mouseY >= itemY - optionAreaHeight / 2 && mouseY <= itemY + optionAreaHeight / 2) {
         const option = menuOptions[i];
-        console.log("Menu option clicked:", option);
         if (option === "Start Game") {
           if (!currentPlayer) {
             loginContainer.style.display = "block";
@@ -120,6 +143,7 @@ canvas.addEventListener("click", async (e) => {
       const anomaly = digit.anomaly;
       const currentTime = performance.now();
 
+      // Process anomaly groups
       if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
         const group = bfsCollectAnomaly(gx, gy, anomaly);
         if (group.length >= 5) {
@@ -136,13 +160,14 @@ canvas.addEventListener("click", async (e) => {
           }
           scoreTotal += countDig * 10;
           folderScores[idx] += countDig;
-          timeLeft += 1;
+          timeLeft += 1; // Add exactly 1 second per group
           const plusAnim = new TimePlusAnimation(`+1 s`, 200, 20, currentTime, 2000);
           timeAnimations[Date.now()] = plusAnim;
           return;
         }
       }
 
+      // Process groups by value
       const groupVal = bfsCollectValue(gx, gy);
       if (groupVal.length >= 5) {
         const fx = canvas.width / 4;
@@ -157,7 +182,7 @@ canvas.addEventListener("click", async (e) => {
         }
         scoreTotal += cVal * 10;
         folderScores[0] += cVal;
-        timeLeft += 1;
+        timeLeft += 1; // Add 1 second per group
         const plusAnim = new TimePlusAnimation(`+1 s`, 200, 20, currentTime, 2000);
         timeAnimations[Date.now()] = plusAnim;
       }
@@ -168,7 +193,9 @@ canvas.addEventListener("click", async (e) => {
   }
 });
 
-// Camera drag (right mouse button)
+// --------------------------------
+// CAMERA DRAGGING (RIGHT MOUSE BUTTON)
+// --------------------------------
 canvas.addEventListener("mousedown", (e) => {
   if (e.button === 2) {
     isDragging = true;
@@ -191,7 +218,9 @@ canvas.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-// Draw Menu
+// --------------------------------
+// DRAWING: MENU and GAME OVER
+// --------------------------------
 function drawMenu() {
   ctx.fillStyle = "#021013";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -222,6 +251,9 @@ function drawGameOver() {
   ctx.fillText("Click to return to menu", canvas.width / 2, canvas.height - 50);
 }
 
+// --------------------------------
+// DRAWING: GAME (with backgrounds for score and timer)
+// --------------------------------
 function drawGame() {
   ctx.fillStyle = "#021013";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -233,7 +265,7 @@ function drawGame() {
     fd.draw(ctx, currentTime);
   }
 
-  // Draw folders at bottom
+  // Draw folders at the bottom
   for (let i = 0; i < 2; i++) {
     const rectX = i * canvas.width / 2;
     const rectY = canvas.height - FOLDER_HEIGHT;
@@ -286,7 +318,10 @@ function drawGame() {
   }
 }
 
-async function updateGame(dt) {
+// --------------------------------
+// UPDATE GAME (logic)
+// --------------------------------
+function updateGame(dt) {
   const currentTime = performance.now();
   timeLeft -= dt / 1000;
   if (timeLeft <= 0) {
@@ -294,17 +329,7 @@ async function updateGame(dt) {
     lastScore = scoreTotal;
     if (currentPlayer) {
       currentPlayer.score = scoreTotal;
-      const records = await fetchAllParticipantsFromXano();
-      const existing = records.find(rec => rec.wallet === currentPlayer.wallet);
-      if (existing) {
-        if (scoreTotal > existing.score) {
-          await updateParticipantOnXano(existing.id, currentPlayer.wallet, scoreTotal);
-        } else {
-          console.log("New score is not better than existing record. Not updating.");
-        }
-      } else {
-        await addParticipantToXano(currentPlayer.wallet, scoreTotal);
-      }
+      addParticipantToXano(currentPlayer.nickname, currentPlayer.wallet, scoreTotal);
     }
     return;
   }
@@ -324,17 +349,25 @@ async function updateGame(dt) {
   }
 }
 
-async function gameLoop() {
+// --------------------------------
+// MAIN LOOP
+// --------------------------------
+function gameLoop() {
   const currentTime = performance.now();
   const dt = currentTime - lastUpdateTime;
   lastUpdateTime = currentTime;
+
+  // Debug: log gameState every 5 seconds (optional)
+  // if (Math.floor(currentTime / 5000) !== Math.floor((currentTime - dt) / 5000)) {
+  //   console.log("Game state:", gameState);
+  // }
 
   switch (gameState) {
     case "menu":
       drawMenu();
       break;
     case "game":
-      await updateGame(dt);
+      updateGame(dt);
       drawGame();
       break;
     case "game_over":
@@ -345,8 +378,12 @@ async function gameLoop() {
 }
 requestAnimationFrame(gameLoop);
 
+// --------------------------------
+// START GAME FUNCTION
+// --------------------------------
 function startGame() {
-  console.log("startGame() called, switching to 'game'");
+  console.log("Game started");
+  // Reset all variables
   for (const key in cells) delete cells[key];
   generatedChunks.clear();
   folderScores[0] = 0;
@@ -363,16 +400,4 @@ function startGame() {
     }
   }
   gameState = "game";
-}
-
-function drawGameOver() {
-  ctx.fillStyle = "#021013";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.font = "36px Arial";
-  ctx.fillStyle = "#7AC0D6";
-  ctx.textAlign = "center";
-  ctx.fillText("Time's up!", canvas.width / 2, canvas.height / 4);
-  ctx.fillText(`Your score: ${lastScore}`, canvas.width / 2, canvas.height / 2);
-  ctx.font = "24px Arial";
-  ctx.fillText("Click to return to menu", canvas.width / 2, canvas.height - 50);
 }
