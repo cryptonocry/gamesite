@@ -7,25 +7,32 @@ import {
   generateChunk, ensureVisibleChunks, drawCells,
   bfsCollectValue, bfsCollectAnomaly, getClickedDigit
 } from "./game.js";
-import { showRecordsOverlay } from "./ui.js";
+
+// Предположим, в ui.js есть функция showRecordsOverlay(...). Но чтобы было проще,
+// сделаем здесь простую обработку. Если у вас уже есть в ui.js, используйте её.
+import { fetchAllParticipantsFromXano } from "./api.js";
 
 // --------------------------------
 // HTML ELEMENTS
 // --------------------------------
-const canvas = document.getElementById("gameCanvas");
-const ctx    = canvas.getContext("2d");
+const canvas            = document.getElementById("gameCanvas");
+const ctx               = canvas.getContext("2d");
 
 // Меню
-const menuContainer = document.getElementById("menuContainer");
-const btnStart      = document.getElementById("btnStart");
-const btnRecords    = document.getElementById("btnRecords");
-const btnExit       = document.getElementById("btnExit");
+const menuContainer     = document.getElementById("menuContainer");
+const btnStart          = document.getElementById("btnStart");
+const btnRecords        = document.getElementById("btnRecords");
 
 // Game Over
-const gameOverOverlay = document.getElementById("gameOverOverlay");
-const finalScore       = document.getElementById("finalScore");
-const btnMenuOver      = document.getElementById("btnMenu");
-const btnRestartOver   = document.getElementById("btnRestart");
+const gameOverOverlay   = document.getElementById("gameOverOverlay");
+const finalScore        = document.getElementById("finalScore");
+const btnMenuOver       = document.getElementById("btnMenu");
+const btnRestartOver    = document.getElementById("btnRestart");
+
+// Records
+const recordsContainer  = document.getElementById("recordsContainer");
+const recordsTableContainer = document.getElementById("recordsTableContainer");
+const closeRecordsButton    = document.getElementById("closeRecordsButton");
 
 // --------------------------------
 // GAME PARAMETERS
@@ -54,24 +61,44 @@ let lastScore = 0;
 // MENU BUTTONS
 // --------------------------------
 btnStart.addEventListener("click", () => {
-  // Если у вас есть логика "loginContainer", "walletInput", и т.д.,
-  // можете её оставить. Ниже – упрощённый вариант:
+  // По-хорошему, здесь вы должны спросить кошелёк у пользователя,
+  // но для примера зададим дефолт.
   currentPlayer = { wallet: "testwallet", score: 0 };
   startGame();
 });
 
-btnRecords.addEventListener("click", async () => {
-  // Открываем оверлей рекордов
-  // (предположим, у вас есть showRecordsOverlay, как в ui.js)
-  // Для примера:
-  await showRecordsOverlay(null, null, currentPlayer);
-  // Можете открывать ваш #recordsContainer
+btnRecords.addEventListener("click", () => {
+  // Покажем оверлей рекордов.
+  showRecordsOverlay();
 });
 
-btnExit.addEventListener("click", () => {
-  // Перезагружаем страницу
-  location.reload();
+// --------------------------------
+// RECORDS OVERLAY
+// --------------------------------
+closeRecordsButton.addEventListener("click", () => {
+  recordsContainer.style.display = "none";
 });
+
+async function showRecordsOverlay() {
+  // Показываем оверлей рекордов
+  recordsContainer.style.display = "block";
+  recordsTableContainer.innerHTML = "Loading...";
+  const records = await fetchAllParticipantsFromXano();
+  if (!records) {
+    recordsTableContainer.innerHTML = "Error fetching records";
+    return;
+  }
+  if (records.length === 0) {
+    recordsTableContainer.innerHTML = "No records yet";
+    return;
+  }
+  let html = "<table><tr><th>BTC Wallet</th><th>Score</th></tr>";
+  records.forEach((rec) => {
+    html += `<tr><td>${rec.wallet}</td><td>${rec.score}</td></tr>`;
+  });
+  html += "</table>";
+  recordsTableContainer.innerHTML = html;
+}
 
 // --------------------------------
 // GAME OVER BUTTONS
@@ -152,7 +179,7 @@ canvas.addEventListener("click", async (e) => {
         }
         scoreTotal += countDig * 10;
         folderScores[idx] += countDig;
-        timeLeft += 1; // или сколько хотите
+        timeLeft += 1;
         const plusAnim = new TimePlusAnimation(`+1 s`, 200, 20, currentTime, 2000);
         timeAnimations[Date.now()] = plusAnim;
         return;
@@ -229,7 +256,7 @@ function drawGame() {
     fd.draw(ctx, currentTime);
   }
 
-  // Рисуем папки снизу (Upside, Strange)
+  // Рисуем папки снизу
   for (let i = 0; i < 2; i++) {
     const rectX = i * canvas.width / 2;
     const rectY = canvas.height - FOLDER_HEIGHT;
@@ -330,14 +357,17 @@ function updateUI() {
   if (gameState === "menu") {
     menuContainer.style.display = "block";
     gameOverOverlay.style.display = "none";
+    recordsContainer.style.display = "none";
     canvas.style.display = "none";
   } else if (gameState === "game") {
     menuContainer.style.display = "none";
     gameOverOverlay.style.display = "none";
+    recordsContainer.style.display = "none";
     canvas.style.display = "block";
   } else if (gameState === "game_over") {
     menuContainer.style.display = "none";
-    canvas.style.display = "block"; // Можно оставить видимым поле, но оно застынет
+    recordsContainer.style.display = "none";
+    canvas.style.display = "block"; 
     finalScore.textContent = `Your score: ${lastScore}`;
     gameOverOverlay.style.display = "block";
   }
