@@ -14,19 +14,19 @@
       font-family: Arial, sans-serif;
     }
 
-    /* ====== МЕНЮ ====== */
+    /* ====== МЕНЮ (корневой контейнер) ====== */
     #menuContainer {
       position: absolute;
       top: 0; left: 0;
       width: 100%;
       height: 100%;
       display: none; /* Показываем только при gameState="menu" */
-      flex-direction: column; /* Будем делить на три части по вертикали */
+      flex-direction: column; /* Три горизонтальных секции (top/center/bottom) */
       background: #021013;
       color: #7AC0D6;
     }
 
-    /* ВЕРХНЯЯ ЧАСТЬ (примерно 30% высоты) */
+    /* Верхняя часть ( ~30% ) */
     #topSection {
       flex: 0 0 30%;
       display: flex;
@@ -36,38 +36,37 @@
       text-align: center;
     }
     #topSection h1 {
-      font-size: 48px;
+      font-size: 56px; /* крупнее, чем было */
       margin: 0;
     }
     #topSection p {
       margin: 10px 0 0 0;
-      font-size: 20px;
+      font-size: 22px;
     }
 
-    /* ЦЕНТРАЛЬНАЯ ЧАСТЬ (примерно 50%) */
+    /* Средняя часть ( ~50% ) */
     #centerSection {
       flex: 0 0 50%;
       display: flex;
-      flex-direction: row;
+      align-items: center; /* Центрируем по вертикали */
+      justify-content: space-evenly; /* Чтобы левая и правая колонка были сбалансированы */
       padding: 20px;
       box-sizing: border-box;
     }
-
-    /* Левая колонка (кнопки) */
+    /* Левая колонка: кнопки */
     #centerLeft {
-      width: 40%;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      /* justify-content: center; */ /* Можно оставить/убрать, по вкусу */
+      gap: 20px; /* Расстояние между кнопками */
     }
     .menuButton {
-      width: 200px;
-      margin: 15px;
-      padding: 15px;
+      width: 220px;
+      padding: 18px;
       background: #7AC0D6;
       color: #021013;
-      font-size: 18px;
+      font-size: 20px; /* Крупнее */
       border: none;
       border-radius: 5px;
       cursor: pointer;
@@ -77,40 +76,57 @@
       background: #fff;
     }
 
-    /* Правая колонка (инструкции) */
+    /* Красная кнопка BUY TOKEN */
+    .buyButton {
+      background: #b33838 !important;
+      color: #fff !important;
+    }
+
+    /* Правая колонка: инструкция */
     #centerRight {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
+      width: 50%;
+      font-size: 20px; /* Увеличим текст */
+      line-height: 1.4;
     }
     #centerRight h3 {
       margin-top: 0;
       margin-bottom: 10px;
+      font-size: 24px; /* покрупнее */
     }
     #centerRight p {
       margin-bottom: 15px;
-      line-height: 1.4;
+    }
+    /* Подсветим части Controls в красный */
+    .highlight {
+      color: #b33838;
+      font-weight: bold;
     }
 
-    /* НИЖНЯЯ ЧАСТЬ (примерно 20%) */
+    /* Нижняя часть ( ~20% ) */
     #bottomSection {
-      flex: 1;
+      flex: 1; /* оставшаяся высота */
       display: flex;
       flex-direction: row;
       align-items: center;
       justify-content: center;
+      gap: 60px; /* Расстояние между блоками */
     }
     .exampleBlock {
-      margin: 0 40px; /* Расстояние между примерами */
       text-align: center;
     }
+    /* Текст над картинкой */
+    .exampleBlock h3 {
+      margin: 0 0 10px 0;
+      font-size: 22px; /* Покрупнее */
+    }
+    /* Увеличим картинки вдвое (max-width: 400px вместо 200) */
     .exampleBlock img {
       display: block;
-      margin: 0 auto 5px auto;
-      max-width: 300px; /* Увеличьте при необходимости */
+      margin: 0 auto;
+      max-width: 400px; 
     }
 
-    /* ====== CANVAS И ИГРОВЫЕ ОВЕРЛЕИ ====== */
+    /* ====== CANVAS (игра) ====== */
     #gameCanvas {
       position: absolute;
       top: 0; left: 0;
@@ -120,7 +136,7 @@
       background: #021013;
     }
 
-    /* Оверлей Game Over */
+    /* ====== Оверлей "Time's up!" ====== */
     #gameOverOverlay {
       display: none;
       position: absolute;
@@ -157,7 +173,7 @@
       background: #fff;
     }
 
-    /* Оверлей рекордов */
+    /* ====== Оверлей рекордов ====== */
     #recordsContainer {
       position: absolute;
       top: 0; left: 0;
@@ -209,31 +225,34 @@
 
     <!-- ЦЕНТРАЛЬНАЯ ЧАСТЬ -->
     <div id="centerSection">
+      <!-- Левая колонка: три кнопки -->
       <div id="centerLeft">
         <button id="btnStart"   class="menuButton">Start Game</button>
         <button id="btnRecords" class="menuButton">Records</button>
+        <button id="btnBuy"     class="menuButton buyButton">BUY TOKEN</button>
       </div>
+      <!-- Правая колонка: увеличенный текст -->
       <div id="centerRight">
         <h3>Objective</h3>
         <p>In 60 seconds, find as many upside-down and strange digits as possible. Each one you collect increases your score.</p>
 
         <h3>Controls</h3>
         <p>
-          <strong>Right-click + drag:</strong> move the camera.<br/>
-          <strong>Left-click:</strong> collect any abnormal digit.
+          <span class="highlight">Right-click + drag</span>: move the camera.<br/>
+          <span class="highlight">Left-click</span>: collect any abnormal digit.
         </p>
       </div>
     </div>
 
-    <!-- НИЖНЯЯ ЧАСТЬ -->
+    <!-- НИЖНЯЯ ЧАСТЬ: примеры (текст над картинками) -->
     <div id="bottomSection">
       <div class="exampleBlock">
-        <img src="1.jpg" alt="Upside-down digits"/>
-        <p>Upside-down digits</p>
+        <h3>Upside-down digits</h3>
+        <img src="1.jpg" alt="Upside-down digits" />
       </div>
       <div class="exampleBlock">
-        <img src="2.jpg" alt="Strange digits"/>
-        <p>Strange digits</p>
+        <h3>Strange digits</h3>
+        <img src="2.jpg" alt="Strange digits" />
       </div>
     </div>
   </div>
