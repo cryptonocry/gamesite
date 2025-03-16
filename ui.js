@@ -16,6 +16,7 @@ export async function showRecordsOverlay(recordsTableContainer, recordsContainer
       rowId = " id='currentPlayerRow'";
       currentPlayerIndex = index;
     }
+    // Можно выводить shortWallet вместо полного rec.wallet, если хотите
     html += `<tr${rowId}>
                <td>${rec.wallet}</td>
                <td>${rec.score}</td>
