@@ -16,7 +16,6 @@ const canvas              = document.getElementById("gameCanvas");
 const ctx                 = canvas.getContext("2d");
 const fullscreenButton    = document.getElementById("fullscreenButton");
 const loginContainer      = document.getElementById("loginContainer");
-// Удалён nicknameInput, т.к. больше не используется
 const walletInput         = document.getElementById("walletInput");
 const loginButton         = document.getElementById("loginButton");
 const recordsContainer    = document.getElementById("recordsContainer");
@@ -321,7 +320,8 @@ function updateGame(dt) {
     lastScore = scoreTotal;
     if (currentPlayer) {
       currentPlayer.score = scoreTotal;
-      addParticipantToXano("", currentPlayer.wallet, scoreTotal);
+      // Передаём только wallet, score (без nickname)
+      addParticipantToXano(currentPlayer.wallet, scoreTotal);
     }
     return;
   }
