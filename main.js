@@ -12,15 +12,20 @@ import { showRecordsOverlay } from "./ui.js";
 // --------------------------------
 // HTML ELEMENTS
 // --------------------------------
-const canvas              = document.getElementById("gameCanvas");
-const ctx                 = canvas.getContext("2d");
-const fullscreenButton    = document.getElementById("fullscreenButton");
-const loginContainer      = document.getElementById("loginContainer");
-const walletInput         = document.getElementById("walletInput");
-const loginButton         = document.getElementById("loginButton");
-const recordsContainer    = document.getElementById("recordsContainer");
-const recordsTableContainer = document.getElementById("recordsTableContainer");
-const closeRecordsButton  = document.getElementById("closeRecordsButton");
+const canvas = document.getElementById("gameCanvas");
+const ctx    = canvas.getContext("2d");
+
+// Меню
+const menuContainer = document.getElementById("menuContainer");
+const btnStart      = document.getElementById("btnStart");
+const btnRecords    = document.getElementById("btnRecords");
+const btnExit       = document.getElementById("btnExit");
+
+// Game Over
+const gameOverOverlay = document.getElementById("gameOverOverlay");
+const finalScore       = document.getElementById("finalScore");
+const btnMenuOver      = document.getElementById("btnMenu");
+const btnRestartOver   = document.getElementById("btnRestart");
 
 // --------------------------------
 // GAME PARAMETERS
@@ -36,8 +41,8 @@ let timeAnimations = {};
 let slotsToRespawn = {};
 
 // Camera parameters
-let cameraX = canvas.width / 2;
-let cameraY = canvas.height / 2;
+let cameraX = 0;
+let cameraY = 0;
 let isDragging = false;
 let dragStart  = { x: 0, y: 0 };
 let cameraStart= { x: 0, y: 0 };
@@ -46,14 +51,37 @@ let lastUpdateTime = performance.now();
 let lastScore = 0;
 
 // --------------------------------
-// FULLSCREEN BUTTON
+// MENU BUTTONS
 // --------------------------------
-fullscreenButton.addEventListener("click", () => {
-  if (!document.fullscreenElement) {
-    canvas.requestFullscreen();
-  } else {
-    document.exitFullscreen();
-  }
+btnStart.addEventListener("click", () => {
+  // Если у вас есть логика "loginContainer", "walletInput", и т.д.,
+  // можете её оставить. Ниже – упрощённый вариант:
+  currentPlayer = { wallet: "testwallet", score: 0 };
+  startGame();
+});
+
+btnRecords.addEventListener("click", async () => {
+  // Открываем оверлей рекордов
+  // (предположим, у вас есть showRecordsOverlay, как в ui.js)
+  // Для примера:
+  await showRecordsOverlay(null, null, currentPlayer);
+  // Можете открывать ваш #recordsContainer
+});
+
+btnExit.addEventListener("click", () => {
+  // Перезагружаем страницу
+  location.reload();
+});
+
+// --------------------------------
+// GAME OVER BUTTONS
+// --------------------------------
+btnMenuOver.addEventListener("click", () => {
+  gameState = "menu";
+  updateUI();
+});
+btnRestartOver.addEventListener("click", () => {
+  startGame();
 });
 
 // --------------------------------
@@ -65,124 +93,6 @@ function resizeCanvas() {
 }
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
-
-// --------------------------------
-// LOGIN EVENT (with validation)
-// --------------------------------
-loginButton.addEventListener("click", () => {
-  const wallet   = walletInput.value.trim();
-
-  // Validate wallet: exactly 62 characters, lowercase letters and digits only
-  const walletRegex = /^[a-z0-9]{62}$/;
-  if (!walletRegex.test(wallet)) {
-    alert("Invalid BTC Taproot wallet! It must be exactly 62 characters (lowercase letters and digits only).");
-    return;
-  }
-
-  currentPlayer = { wallet, score: 0 };
-  console.log("Login successful:", currentPlayer);
-  loginContainer.style.display = "none";
-  startGame();
-});
-
-// --------------------------------
-// CLOSE RECORDS OVERLAY
-// --------------------------------
-closeRecordsButton.addEventListener("click", () => {
-  recordsContainer.style.display = "none";
-  gameState = "menu";
-});
-
-// --------------------------------
-// CANVAS CLICK HANDLER
-// --------------------------------
-canvas.addEventListener("click", async (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-
-  if (gameState === "menu") {
-    const menuOptions = ["Start Game", "Records", "Exit"];
-    const optionAreaHeight = 40;
-    const baseY = canvas.height / 2 - (menuOptions.length * optionAreaHeight) / 2;
-    for (let i = 0; i < menuOptions.length; i++) {
-      const itemY = baseY + i * optionAreaHeight;
-      if (mouseX >= canvas.width / 2 - 150 && mouseX <= canvas.width / 2 + 150 &&
-          mouseY >= itemY - optionAreaHeight / 2 && mouseY <= itemY + optionAreaHeight / 2) {
-        const option = menuOptions[i];
-        if (option === "Start Game") {
-          if (!currentPlayer) {
-            loginContainer.style.display = "block";
-          } else {
-            startGame();
-          }
-        } else if (option === "Records") {
-          await showRecordsOverlay(recordsTableContainer, recordsContainer, currentPlayer);
-        } else if (option === "Exit") {
-          location.reload();
-        }
-        return;
-      }
-    }
-  }
-  else if (gameState === "game") {
-    const clickedKey = getClickedDigit(mouseX, mouseY, cameraX, cameraY);
-    if (clickedKey) {
-      const parts = clickedKey.split("_").map(Number);
-      const gx = parts[0], gy = parts[1];
-      const digit = cells[clickedKey];
-      const anomaly = digit.anomaly;
-      const currentTime = performance.now();
-
-      // Process anomaly groups
-      if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
-        const group = bfsCollectAnomaly(gx, gy, anomaly);
-        if (group.length >= 5) {
-          const idx = (anomaly === Digit.ANOMALY_UPSIDE) ? 0 : 1;
-          const fx = canvas.width / 4 + (idx * canvas.width / 2);
-          const fy = canvas.height - FOLDER_HEIGHT / 2;
-          const countDig = group.length;
-          for (let key of group) {
-            const d = cells[key];
-            const pos = d.screenPosition(cameraX, cameraY, currentTime);
-            flyingDigits.push(new FlyingDigit(d, pos.x, pos.y, fx, fy, currentTime, 1000));
-            delete cells[key];
-            slotsToRespawn[key] = currentTime + 2000;
-          }
-          scoreTotal += countDig * 10;
-          folderScores[idx] += countDig;
-          timeLeft += 1; // Add exactly 1 second per group
-          const plusAnim = new TimePlusAnimation(`+1 s`, 200, 20, currentTime, 2000);
-          timeAnimations[Date.now()] = plusAnim;
-          return;
-        }
-      }
-
-      // Process groups by value
-      const groupVal = bfsCollectValue(gx, gy);
-      if (groupVal.length >= 5) {
-        const fx = canvas.width / 4;
-        const fy = canvas.height - FOLDER_HEIGHT / 2;
-        const cVal = groupVal.length;
-        for (let key of groupVal) {
-          const d = cells[key];
-          const pos = d.screenPosition(cameraX, cameraY, currentTime);
-          flyingDigits.push(new FlyingDigit(d, pos.x, pos.y, fx, fy, currentTime, 1000));
-          delete cells[key];
-          slotsToRespawn[key] = currentTime + 2000;
-        }
-        scoreTotal += cVal * 10;
-        folderScores[0] += cVal;
-        timeLeft += 1; // Add 1 second per group
-        const plusAnim = new TimePlusAnimation(`+1 s`, 200, 20, currentTime, 2000);
-        timeAnimations[Date.now()] = plusAnim;
-      }
-    }
-  }
-  else if (gameState === "game_over") {
-    gameState = "menu";
-  }
-});
 
 // --------------------------------
 // CAMERA DRAGGING (RIGHT MOUSE BUTTON)
@@ -210,104 +120,66 @@ canvas.addEventListener("contextmenu", (e) => {
 });
 
 // --------------------------------
-// DRAWING: MENU and GAME OVER
+// CANVAS CLICK HANDLER (Collect digits)
 // --------------------------------
-function drawMenu() {
-  ctx.fillStyle = "#021013";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.font = "36px Arial";
-  ctx.fillStyle = "#7AC0D6";
-  ctx.textAlign = "center";
-  ctx.fillText("Main Menu", canvas.width / 2, canvas.height / 4);
+canvas.addEventListener("click", async (e) => {
+  if (gameState !== "game") return; // Только во время игры
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
 
-  const menuOptions = ["Start Game", "Records", "Exit"];
-  const optionAreaHeight = 40;
-  const baseY = canvas.height / 2 - (menuOptions.length * optionAreaHeight) / 2;
-  for (let i = 0; i < menuOptions.length; i++) {
-    ctx.font = "36px Arial";
-    ctx.fillStyle = "#7AC0D6";
-    ctx.fillText(menuOptions[i], canvas.width / 2, baseY + i * optionAreaHeight);
-  }
-}
+  const clickedKey = getClickedDigit(mouseX, mouseY, cameraX, cameraY);
+  if (clickedKey) {
+    const [gx, gy] = clickedKey.split("_").map(Number);
+    const digit = cells[clickedKey];
+    const anomaly = digit.anomaly;
+    const currentTime = performance.now();
 
-function drawGameOver() {
-  ctx.fillStyle = "#021013";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.font = "36px Arial";
-  ctx.fillStyle = "#7AC0D6";
-  ctx.textAlign = "center";
-  ctx.fillText("Time's up!", canvas.width / 2, canvas.height / 4);
-  ctx.fillText(`Your score: ${lastScore}`, canvas.width / 2, canvas.height / 2);
-  ctx.font = "24px Arial";
-  ctx.fillText("Click to return to menu", canvas.width / 2, canvas.height - 50);
-}
+    // Process anomaly groups
+    if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
+      const group = bfsCollectAnomaly(gx, gy, anomaly);
+      if (group.length >= 5) {
+        const idx = (anomaly === Digit.ANOMALY_UPSIDE) ? 0 : 1;
+        const fx = canvas.width / 4 + (idx * canvas.width / 2);
+        const fy = canvas.height - FOLDER_HEIGHT / 2;
+        const countDig = group.length;
+        for (let key of group) {
+          const d = cells[key];
+          const pos = d.screenPosition(cameraX, cameraY, currentTime);
+          flyingDigits.push(new FlyingDigit(d, pos.x, pos.y, fx, fy, currentTime, 1000));
+          delete cells[key];
+          slotsToRespawn[key] = currentTime + 2000;
+        }
+        scoreTotal += countDig * 10;
+        folderScores[idx] += countDig;
+        timeLeft += 1; // или сколько хотите
+        const plusAnim = new TimePlusAnimation(`+1 s`, 200, 20, currentTime, 2000);
+        timeAnimations[Date.now()] = plusAnim;
+        return;
+      }
+    }
 
-// --------------------------------
-// DRAWING: GAME (with backgrounds for score and timer)
-// --------------------------------
-function drawGame() {
-  ctx.fillStyle = "#021013";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const currentTime = performance.now();
-
-  drawCells(ctx, cameraX, cameraY, canvas.width, canvas.height);
-
-  for (let fd of flyingDigits) {
-    fd.draw(ctx, currentTime);
-  }
-
-  // Draw folders at the bottom
-  for (let i = 0; i < 2; i++) {
-    const rectX = i * canvas.width / 2;
-    const rectY = canvas.height - FOLDER_HEIGHT;
-    ctx.fillStyle = "#7AC0D6";
-    ctx.fillRect(rectX, rectY, canvas.width / 2, FOLDER_HEIGHT);
-    ctx.strokeStyle = "#7AC0D6";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(rectX, rectY, canvas.width / 2, FOLDER_HEIGHT);
-    ctx.font = "24px Arial";
-    ctx.fillStyle = "#021013";
-    ctx.textAlign = "center";
-    ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + canvas.width / 4, rectY + FOLDER_HEIGHT / 2);
-  }
-
-  // Draw Score with background
-  ctx.save();
-  ctx.font = "24px Arial";
-  const scoreText = `Score: ${scoreTotal}`;
-  const scoreWidth = ctx.measureText(scoreText).width;
-  const scorePadding = 5;
-  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-  ctx.fillRect(10 - scorePadding, 10, scoreWidth + scorePadding * 2, 30);
-  ctx.fillStyle = "#7AC0D6";
-  ctx.textAlign = "left";
-  ctx.fillText(scoreText, 10, 30);
-  ctx.restore();
-
-  // Draw Timer with background
-  ctx.save();
-  ctx.font = "24px Arial";
-  const timerText = `${Math.floor(timeLeft)} s.`;
-  const timerWidth = ctx.measureText(timerText).width;
-  const timerPadding = 5;
-  const timerX = canvas.width / 2;
-  const timerY = 30;
-  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-  ctx.fillRect(timerX - timerWidth / 2 - timerPadding, timerY - 24, timerWidth + timerPadding * 2, 30);
-  ctx.fillStyle = "#7AC0D6";
-  ctx.textAlign = "center";
-  ctx.fillText(timerText, timerX, timerY);
-  ctx.restore();
-
-  // Draw time-plus animations
-  for (const k in timeAnimations) {
-    const anim = timeAnimations[k];
-    const keep = anim.draw(ctx, currentTime);
-    if (!keep) {
-      delete timeAnimations[k];
+    // Process groups by value
+    const groupVal = bfsCollectValue(gx, gy);
+    if (groupVal.length >= 5) {
+      const fx = canvas.width / 4;
+      const fy = canvas.height - FOLDER_HEIGHT / 2;
+      const cVal = groupVal.length;
+      for (let key of groupVal) {
+        const d = cells[key];
+        const pos = d.screenPosition(cameraX, cameraY, currentTime);
+        flyingDigits.push(new FlyingDigit(d, pos.x, pos.y, fx, fy, currentTime, 1000));
+        delete cells[key];
+        slotsToRespawn[key] = currentTime + 2000;
+      }
+      scoreTotal += cVal * 10;
+      folderScores[0] += cVal;
+      timeLeft += 1;
+      const plusAnim = new TimePlusAnimation(`+1 s`, 200, 20, currentTime, 2000);
+      timeAnimations[Date.now()] = plusAnim;
     }
   }
-}
+});
 
 // --------------------------------
 // UPDATE GAME (logic)
@@ -320,9 +192,9 @@ function updateGame(dt) {
     lastScore = scoreTotal;
     if (currentPlayer) {
       currentPlayer.score = scoreTotal;
-      // Передаём только wallet, score (без nickname)
       addParticipantToXano(currentPlayer.wallet, scoreTotal);
     }
+    updateUI();
     return;
   }
   ensureVisibleChunks(cameraX, cameraY, canvas.width, canvas.height);
@@ -342,6 +214,73 @@ function updateGame(dt) {
 }
 
 // --------------------------------
+// DRAW GAME
+// --------------------------------
+function drawGame() {
+  ctx.fillStyle = "#021013";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const currentTime = performance.now();
+
+  // Рисуем клетки
+  drawCells(ctx, cameraX, cameraY, canvas.width, canvas.height);
+
+  // Рисуем "летящие" цифры
+  for (let fd of flyingDigits) {
+    fd.draw(ctx, currentTime);
+  }
+
+  // Рисуем папки снизу (Upside, Strange)
+  for (let i = 0; i < 2; i++) {
+    const rectX = i * canvas.width / 2;
+    const rectY = canvas.height - FOLDER_HEIGHT;
+    ctx.fillStyle = "#7AC0D6";
+    ctx.fillRect(rectX, rectY, canvas.width / 2, FOLDER_HEIGHT);
+    ctx.strokeStyle = "#7AC0D6";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(rectX, rectY, canvas.width / 2, FOLDER_HEIGHT);
+    ctx.font = "24px Arial";
+    ctx.fillStyle = "#021013";
+    ctx.textAlign = "center";
+    ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + canvas.width / 4, rectY + FOLDER_HEIGHT / 2);
+  }
+
+  // Счёт
+  ctx.save();
+  ctx.font = "24px Arial";
+  const scoreText = `Score: ${scoreTotal}`;
+  const scoreWidth = ctx.measureText(scoreText).width;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+  ctx.fillRect(10, 10, scoreWidth + 10, 30);
+  ctx.fillStyle = "#7AC0D6";
+  ctx.textAlign = "left";
+  ctx.fillText(scoreText, 15, 32);
+  ctx.restore();
+
+  // Таймер
+  ctx.save();
+  ctx.font = "24px Arial";
+  const timerText = `${Math.floor(timeLeft)} s.`;
+  const timerWidth = ctx.measureText(timerText).width;
+  const timerX = canvas.width / 2;
+  const timerY = 30;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+  ctx.fillRect(timerX - timerWidth / 2 - 5, timerY - 24, timerWidth + 10, 30);
+  ctx.fillStyle = "#7AC0D6";
+  ctx.textAlign = "center";
+  ctx.fillText(timerText, timerX, timerY);
+  ctx.restore();
+
+  // Анимации +N s
+  for (const k in timeAnimations) {
+    const anim = timeAnimations[k];
+    const keep = anim.draw(ctx, currentTime);
+    if (!keep) {
+      delete timeAnimations[k];
+    }
+  }
+}
+
+// --------------------------------
 // MAIN LOOP
 // --------------------------------
 function gameLoop() {
@@ -349,28 +288,19 @@ function gameLoop() {
   const dt = currentTime - lastUpdateTime;
   lastUpdateTime = currentTime;
 
-  switch (gameState) {
-    case "menu":
-      drawMenu();
-      break;
-    case "game":
-      updateGame(dt);
-      drawGame();
-      break;
-    case "game_over":
-      drawGameOver();
-      break;
+  if (gameState === "game") {
+    updateGame(dt);
+    drawGame();
   }
   requestAnimationFrame(gameLoop);
 }
 requestAnimationFrame(gameLoop);
 
 // --------------------------------
-// START GAME FUNCTION
+// START GAME
 // --------------------------------
 function startGame() {
-  console.log("Game started");
-  // Reset all variables
+  // Сбрасываем всё
   for (const key in cells) delete cells[key];
   generatedChunks.clear();
   folderScores[0] = 0;
@@ -380,11 +310,38 @@ function startGame() {
   flyingDigits = [];
   timeAnimations = {};
   slotsToRespawn = {};
+  cameraX = 0;
+  cameraY = 0;
 
   for (let cx = -1; cx <= 2; cx++) {
     for (let cy = -1; cy <= 2; cy++) {
       generateChunk(cx, cy);
     }
   }
+
   gameState = "game";
+  updateUI();
 }
+
+// --------------------------------
+// UPDATE UI (show/hide overlays)
+// --------------------------------
+function updateUI() {
+  if (gameState === "menu") {
+    menuContainer.style.display = "block";
+    gameOverOverlay.style.display = "none";
+    canvas.style.display = "none";
+  } else if (gameState === "game") {
+    menuContainer.style.display = "none";
+    gameOverOverlay.style.display = "none";
+    canvas.style.display = "block";
+  } else if (gameState === "game_over") {
+    menuContainer.style.display = "none";
+    canvas.style.display = "block"; // Можно оставить видимым поле, но оно застынет
+    finalScore.textContent = `Your score: ${lastScore}`;
+    gameOverOverlay.style.display = "block";
+  }
+}
+
+// При старте приложения показываем меню
+updateUI();
