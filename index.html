@@ -13,35 +13,57 @@
       background: #021013;
       font-family: Arial, sans-serif;
     }
-    /* Основной контейнер для меню (слева) + инструкция (справа) */
+
+    /* ====== МЕНЮ ====== */
     #menuContainer {
-      display: none; /* Прячем по умолчанию (покажем при состоянии "menu") */
+      position: absolute;
+      top: 0; left: 0;
       width: 100%;
       height: 100%;
-    }
-    #menuPanel, #helpPanel {
-      float: left;
-      height: 100%;
-      box-sizing: border-box;
-      padding: 20px;
-      overflow-y: auto;
+      display: none; /* Показываем только при gameState="menu" */
+      flex-direction: column; /* Будем делить на три части по вертикали */
       background: #021013;
       color: #7AC0D6;
     }
-    /* Делим поровну: 50% на 50% */
-    #menuPanel {
-      width: 50%;
-      border-right: 2px solid #7AC0D6;
+
+    /* ВЕРХНЯЯ ЧАСТЬ (примерно 30% высоты) */
+    #topSection {
+      flex: 0 0 30%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
     }
-    #helpPanel {
-      width: 50%;
+    #topSection h1 {
+      font-size: 48px;
+      margin: 0;
+    }
+    #topSection p {
+      margin: 10px 0 0 0;
+      font-size: 20px;
     }
 
-    /* Кнопки в меню */
+    /* ЦЕНТРАЛЬНАЯ ЧАСТЬ (примерно 50%) */
+    #centerSection {
+      flex: 0 0 50%;
+      display: flex;
+      flex-direction: row;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    /* Левая колонка (кнопки) */
+    #centerLeft {
+      width: 40%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
     .menuButton {
-      display: block;
-      width: 80%;
-      margin: 20px auto;
+      width: 200px;
+      margin: 15px;
       padding: 15px;
       background: #7AC0D6;
       color: #021013;
@@ -55,39 +77,50 @@
       background: #fff;
     }
 
-    #menuPanel h2 {
+    /* Правая колонка (инструкции) */
+    #centerRight {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    #centerRight h3 {
       margin-top: 0;
-      text-align: center;
-    }
-
-    /* Инструкция */
-    #helpPanel h2 {
-      margin-top: 0;
-      text-align: center;
-    }
-    #helpPanel h3 {
-      margin-bottom: 5px;
-      margin-top: 20px;
-    }
-    #helpPanel p {
       margin-bottom: 10px;
+    }
+    #centerRight p {
+      margin-bottom: 15px;
       line-height: 1.4;
     }
-    #helpPanel img {
+
+    /* НИЖНЯЯ ЧАСТЬ (примерно 20%) */
+    #bottomSection {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+    }
+    .exampleBlock {
+      margin: 0 40px; /* Расстояние между примерами */
+      text-align: center;
+    }
+    .exampleBlock img {
       display: block;
-      margin: 10px auto;
-      max-width: 600px; /* Вы можете поменять на нужное */
+      margin: 0 auto 5px auto;
+      max-width: 300px; /* Увеличьте при необходимости */
     }
 
-    /* Канвас (сама игра) */
+    /* ====== CANVAS И ИГРОВЫЕ ОВЕРЛЕИ ====== */
     #gameCanvas {
-      display: block;
       position: absolute;
       top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: none; /* Показываем когда gameState="game" */
       background: #021013;
     }
 
-    /* Экран Game Over (оверлей) */
+    /* Оверлей Game Over */
     #gameOverOverlay {
       display: none;
       position: absolute;
@@ -103,8 +136,8 @@
       text-align: center;
     }
     #gameOverContent h1 {
-      margin: 0 0 20px 0;
       font-size: 36px;
+      margin: 0 0 20px 0;
     }
     #gameOverContent p {
       margin: 20px 0;
@@ -124,7 +157,7 @@
       background: #fff;
     }
 
-    /* Оверлей с рекордами (если у вас такое уже есть) */
+    /* Оверлей рекордов */
     #recordsContainer {
       position: absolute;
       top: 0; left: 0;
@@ -166,38 +199,49 @@
   </style>
 </head>
 <body>
-  <!-- Меню (слева) + Инструкция (справа) -->
+  <!-- МЕНЮ -->
   <div id="menuContainer">
-    <div id="menuPanel">
-      <h2>Main Menu</h2>
-      <button id="btnStart"   class="menuButton">Start Game</button>
-      <button id="btnRecords" class="menuButton">Records</button>
-      <!-- Убрали Exit -->
+    <!-- ВЕРХНЯЯ ЧАСТЬ -->
+    <div id="topSection">
+      <h1>ANOMALIES GAME</h1>
+      <p>Collect as many unusual digits as you can in 60 seconds!</p>
     </div>
-    <div id="helpPanel">
-      <h2>HOW TO PLAY</h2>
 
-      <h3>1) Objective:</h3>
-      <p>In 60 seconds, collect as many upside-down and strange digits as you can. Each digit you collect increases your total score.</p>
+    <!-- ЦЕНТРАЛЬНАЯ ЧАСТЬ -->
+    <div id="centerSection">
+      <div id="centerLeft">
+        <button id="btnStart"   class="menuButton">Start Game</button>
+        <button id="btnRecords" class="menuButton">Records</button>
+      </div>
+      <div id="centerRight">
+        <h3>Objective</h3>
+        <p>In 60 seconds, find as many upside-down and strange digits as possible. Each one you collect increases your score.</p>
 
-      <h3>2) Controls:</h3>
-      <p>Right-click and drag to move the camera around the map.<br/>
-         Left-click on any abnormal digit to collect it.</p>
+        <h3>Controls</h3>
+        <p>
+          <strong>Right-click + drag:</strong> move the camera.<br/>
+          <strong>Left-click:</strong> collect any abnormal digit.
+        </p>
+      </div>
+    </div>
 
-      <h3>3) Upside-down digits:</h3>
-      <p>They appear flipped vertically, like this:</p>
-      <img src="1.jpg" alt="Upside-down digits" width="800" />
-
-      <h3>4) Strange digits:</h3>
-      <p>They oscillate or pulse in size, like this:</p>
-      <img src="2.jpg" alt="Strange digits" width="800" />
+    <!-- НИЖНЯЯ ЧАСТЬ -->
+    <div id="bottomSection">
+      <div class="exampleBlock">
+        <img src="1.jpg" alt="Upside-down digits"/>
+        <p>Upside-down digits</p>
+      </div>
+      <div class="exampleBlock">
+        <img src="2.jpg" alt="Strange digits"/>
+        <p>Strange digits</p>
+      </div>
     </div>
   </div>
 
-  <!-- Игровое поле -->
+  <!-- CANVAS (игра) -->
   <canvas id="gameCanvas"></canvas>
 
-  <!-- Оверлей для Game Over -->
+  <!-- GAME OVER OVERLAY -->
   <div id="gameOverOverlay">
     <div id="gameOverContent">
       <h1>Time's up!</h1>
@@ -207,7 +251,7 @@
     </div>
   </div>
 
-  <!-- Оверлей для рекордов -->
+  <!-- RECORDS OVERLAY -->
   <div id="recordsContainer">
     <div id="recordsContent">
       <h2>Ranking</h2>
