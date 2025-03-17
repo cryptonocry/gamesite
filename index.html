@@ -111,8 +111,10 @@
 
     /* Средняя часть ( ~65% ) */
     #centerSection {
-  flex: 0 0 auto;
-  /* при необходимости можно добавить padding: 10px 0; для небольшого отступа */
+  flex: 0 0 auto;         
+  padding: 40px 0 20px 0; /* Вместо padding-bottom:10px; можно сразу указать 4 значения 
+                             (в порядке top, right, bottom, left). 
+                             Здесь 20px сверху, 10px снизу. */
       display: flex;
       align-items: center; /* Вертикальное выравнивание */
       justify-content: space-evenly; /* Пространство между колонками */
