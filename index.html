@@ -111,7 +111,8 @@
 
     /* Средняя часть ( ~65% ) */
     #centerSection {
-      flex: 0 0 25%;
+  flex: 0 0 auto;
+  /* при необходимости можно добавить padding: 10px 0; для небольшого отступа */
       display: flex;
       align-items: center; /* Вертикальное выравнивание */
       justify-content: space-evenly; /* Пространство между колонками */
@@ -170,14 +171,15 @@
     }
 
     /* Нижняя часть ( ~20% ) */
-    #bottomSection {
-      flex: 1; /* оставшаяся высота ~20% */
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      gap: 60px;
-    }
+   #bottomSection {
+  flex: 0 0 auto; 
+  /* убираем flex:1 */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 30px; /* можно уменьшить gap для сокращения отступа между картинками */
+}
     .exampleBlock {
       text-align: center;
     }
