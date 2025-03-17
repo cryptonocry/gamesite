@@ -19,7 +19,7 @@
       position: absolute;
       top: 10px;
       right: 10px;
-      z-index: 100;
+      z-index: 300;
       padding: 10px 15px;
       background: #7AC0D6;
       border: none;
@@ -33,15 +33,17 @@
 
     /* ====== TOP NAV BAR (ANOMALIES, STRAY, ARCANUM) ====== */
     #topNav {
-      position: relative; /* чтобы не мешать fullscreenButton */
+      /* Меняем на absolute + z-index повыше, чтобы не перекрывало menuContainer */
+      position: absolute; 
+      top: 0; left: 0;
       width: 100%;
+      z-index: 200; /* <-- Это исправит "исчезание" */
       display: flex;
       flex-direction: row;
       align-items: center;
       justify-content: center;
       gap: 30px;
       background: #021013;
-      /* небольшая полоса/отступ */
       padding: 15px 0;
     }
     .navButton {
@@ -71,7 +73,8 @@
     #loginContainer {
       position: absolute;
       top: 0; left: 0;
-      width: 100%; height: 100%;
+      width: 100%; 
+      height: 100%;
       display: none;
       z-index: 101;
       background: rgba(0, 0, 0, 0.8);
@@ -122,10 +125,10 @@
       flex-direction: column; /* Три вертикальные секции */
       background: #021013;
       color: #7AC0D6;
+      z-index: 100; /* <-- Ниже, чем topNav (200) */
     }
 
-    /* topSection, centerSection, bottomSection – складываются вертикально */
-    /* ===== ВЕРХНЯЯ ЧАСТЬ (НАЗВАНИЕ, ПОДЗАГОЛОВОК) ===== */
+    /* ВЕРХНЯЯ ЧАСТЬ (НАЗВАНИЕ, ПОДЗАГОЛОВОК) */
     #topSection {
       flex: 0 0 auto;         
       padding: 30px 0 20px 0; 
@@ -144,7 +147,7 @@
       font-size: 22px;
     }
 
-    /* ===== СРЕДНЯЯ ЧАСТЬ (Кнопки слева, Текст справа) ===== */
+    /* СРЕДНЯЯ ЧАСТЬ (Кнопки слева, Текст справа) */
     #centerSection {
       flex: 0 0 auto;         
       display: flex;
@@ -203,7 +206,7 @@
       font-weight: bold;
     }
 
-    /* ===== НИЖНЯЯ ЧАСТЬ (примеры цифр) ===== */
+    /* НИЖНЯЯ ЧАСТЬ (примеры цифр) */
     #bottomSection {
       flex: 0 0 auto;
       display: flex;
@@ -211,7 +214,7 @@
       align-items: center;
       justify-content: center;
       gap: 30px;
-      padding-bottom: 20px; /* чтобы картинки не липли к самому низу */
+      padding-bottom: 20px; 
     }
     .exampleBlock {
       text-align: center;
@@ -226,7 +229,7 @@
       max-width: 400px; 
     }
 
-    /* ====== CANVAS (игра) ====== */
+    /* CANVAS (игра) */
     #gameCanvas {
       position: absolute;
       top: 0; left: 0;
@@ -236,12 +239,13 @@
       background: #021013;
     }
 
-    /* ====== Оверлей "Time's up!" ====== */
+    /* Оверлей TIME'S UP */
     #gameOverOverlay {
       display: none;
       position: absolute;
       top: 0; left: 0;
-      width: 100%; height: 100%;
+      width: 100%; 
+      height: 100%;
       background: rgba(0,0,0,0.75);
       color: #7AC0D6;
     }
@@ -273,11 +277,12 @@
       background: #fff;
     }
 
-    /* ====== Оверлей рекордов ====== */
+    /* Оверлей рекордов */
     #recordsContainer {
       position: absolute;
       top: 0; left: 0;
-      width: 100%; height: 100%;
+      width: 100%; 
+      height: 100%;
       background: rgba(0,0,0,0.9);
       display: none;
       z-index: 999;
