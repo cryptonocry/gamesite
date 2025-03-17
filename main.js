@@ -8,23 +8,26 @@ import {
   bfsCollectValue, bfsCollectAnomaly, getClickedDigit
 } from "./game.js";
 
-// Если в ui.js есть функции для рекордов, используйте их. Здесь для наглядности - прямо в main.js:
+// Если в ui.js есть функции для рекордов – используйте их. Здесь же для наглядности:
 import { fetchAllParticipantsFromXano } from "./api.js";
 
 // ---------- HTML ELEMENTS ----------
-const menuContainer     = document.getElementById("menuContainer");
-const btnStart          = document.getElementById("btnStart");
-const btnRecords        = document.getElementById("btnRecords");
+const fullscreenButton = document.getElementById("fullscreenButton");
 
-const gameCanvas        = document.getElementById("gameCanvas");
-const ctx               = gameCanvas.getContext("2d");
+const menuContainer  = document.getElementById("menuContainer");
+const btnStart       = document.getElementById("btnStart");
+const btnRecords     = document.getElementById("btnRecords");
+const btnBuy         = document.getElementById("btnBuy");
 
-const gameOverOverlay   = document.getElementById("gameOverOverlay");
-const finalScore        = document.getElementById("finalScore");
-const btnMenuOver       = document.getElementById("btnMenu");
-const btnRestartOver    = document.getElementById("btnRestart");
+const gameCanvas     = document.getElementById("gameCanvas");
+const ctx            = gameCanvas.getContext("2d");
 
-const recordsContainer  = document.getElementById("recordsContainer");
+const gameOverOverlay= document.getElementById("gameOverOverlay");
+const finalScore     = document.getElementById("finalScore");
+const btnMenuOver    = document.getElementById("btnMenu");
+const btnRestartOver = document.getElementById("btnRestart");
+
+const recordsContainer      = document.getElementById("recordsContainer");
 const recordsTableContainer = document.getElementById("recordsTableContainer");
 const closeRecordsButton    = document.getElementById("closeRecordsButton");
 
@@ -32,7 +35,6 @@ const closeRecordsButton    = document.getElementById("closeRecordsButton");
 let gameState  = "menu";  // "menu", "game", "game_over"
 let currentPlayer = null; // { wallet, score }
 
-// Параметры
 const START_TIME    = 60;
 const FOLDER_HEIGHT = 80;
 let scoreTotal = 0;
@@ -49,15 +51,40 @@ let cameraStart= { x: 0, y: 0 };
 let lastUpdateTime = performance.now();
 let lastScore = 0;
 
+// ---------- FULLSCREEN BUTTON ----------
+fullscreenButton.addEventListener("click", () => {
+  if (!document.fullscreenElement) {
+    gameCanvas.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+});
+
 // ---------- MENU BUTTONS ----------
 btnStart.addEventListener("click", () => {
-  // Если нужна авторизация кошелька - сделайте её здесь
-  currentPlayer = { wallet: "testwallet" };
+  // Спросим у пользователя кошелёк (prompt)
+  let wallet = prompt("Enter your BTC Taproot wallet (62 chars):");
+  if (!wallet) {
+    alert("Wallet is required to start the game!");
+    return;
+  }
+  wallet = wallet.trim().toLowerCase();
+  // Можно добавить валидацию по длине
+  if (wallet.length !== 62) {
+    alert("Invalid wallet length! Must be 62 chars.");
+    return;
+  }
+  currentPlayer = { wallet, score: 0 };
   startGame();
 });
 
 btnRecords.addEventListener("click", () => {
   showRecordsOverlay();
+});
+
+btnBuy.addEventListener("click", () => {
+  // Здесь ваша логика покупки токена
+  alert("Here you can implement your token purchase logic.");
 });
 
 // ---------- RECORDS OVERLAY ----------
@@ -86,8 +113,20 @@ btnMenuOver.addEventListener("click", () => {
   gameState = "menu";
   updateUI();
 });
-
 btnRestartOver.addEventListener("click", () => {
+  // Перезапустить игру, спросив кошелёк заново
+  let wallet = prompt("Enter your BTC Taproot wallet (62 chars):");
+  if (!wallet) {
+    alert("Wallet is required!");
+    // Не перезапускаем без кошелька
+    return;
+  }
+  wallet = wallet.trim().toLowerCase();
+  if (wallet.length !== 62) {
+    alert("Invalid wallet length! Must be 62 chars.");
+    return;
+  }
+  currentPlayer = { wallet, score: 0 };
   startGame();
 });
 
@@ -329,5 +368,5 @@ function updateUI() {
   }
 }
 
-// При загрузке → меню
+// При загрузке → показываем меню
 updateUI();
