@@ -14,6 +14,23 @@
       font-family: Arial, sans-serif;
     }
 
+    /* ====== КНОПКА FULLSCREEN (в правом верхнем углу) ====== */
+    #fullscreenButton {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 100;
+      padding: 10px 15px;
+      background: #7AC0D6;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #fullscreenButton:hover {
+      background: #fff;
+      color: #021013;
+    }
+
     /* ====== МЕНЮ (корневой контейнер) ====== */
     #menuContainer {
       position: absolute;
@@ -26,9 +43,9 @@
       color: #7AC0D6;
     }
 
-    /* Верхняя часть ( ~30% ) */
+    /* Верхняя часть ( ~25% ) */
     #topSection {
-      flex: 0 0 30%;
+      flex: 0 0 25%;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -36,7 +53,7 @@
       text-align: center;
     }
     #topSection h1 {
-      font-size: 56px; /* крупнее, чем было */
+      font-size: 56px; 
       margin: 0;
     }
     #topSection p {
@@ -44,12 +61,12 @@
       font-size: 22px;
     }
 
-    /* Средняя часть ( ~50% ) */
+    /* Средняя часть ( ~55% ) */
     #centerSection {
-      flex: 0 0 50%;
+      flex: 0 0 55%;
       display: flex;
-      align-items: center; /* Центрируем по вертикали */
-      justify-content: space-evenly; /* Чтобы левая и правая колонка были сбалансированы */
+      align-items: center; /* Вертикальное выравнивание */
+      justify-content: space-evenly; /* Пространство между колонками */
       padding: 20px;
       box-sizing: border-box;
     }
@@ -58,7 +75,6 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      /* justify-content: center; */ /* Можно оставить/убрать, по вкусу */
       gap: 20px; /* Расстояние между кнопками */
     }
     .menuButton {
@@ -66,7 +82,7 @@
       padding: 18px;
       background: #7AC0D6;
       color: #021013;
-      font-size: 20px; /* Крупнее */
+      font-size: 20px;
       border: none;
       border-radius: 5px;
       cursor: pointer;
@@ -81,22 +97,25 @@
       background: #b33838 !important;
       color: #fff !important;
     }
+    /* Анимация при наведении – чуть затемним */
+    .buyButton:hover {
+      background: #9f2f2f !important;
+    }
 
     /* Правая колонка: инструкция */
     #centerRight {
       width: 50%;
-      font-size: 20px; /* Увеличим текст */
+      font-size: 20px;
       line-height: 1.4;
     }
     #centerRight h3 {
       margin-top: 0;
       margin-bottom: 10px;
-      font-size: 24px; /* покрупнее */
+      font-size: 24px;
     }
     #centerRight p {
       margin-bottom: 15px;
     }
-    /* Подсветим части Controls в красный */
     .highlight {
       color: #b33838;
       font-weight: bold;
@@ -104,22 +123,20 @@
 
     /* Нижняя часть ( ~20% ) */
     #bottomSection {
-      flex: 1; /* оставшаяся высота */
+      flex: 1; /* оставшаяся высота ~20% */
       display: flex;
       flex-direction: row;
       align-items: center;
       justify-content: center;
-      gap: 60px; /* Расстояние между блоками */
+      gap: 60px;
     }
     .exampleBlock {
       text-align: center;
     }
-    /* Текст над картинкой */
     .exampleBlock h3 {
       margin: 0 0 10px 0;
-      font-size: 22px; /* Покрупнее */
+      font-size: 22px;
     }
-    /* Увеличим картинки вдвое (max-width: 400px вместо 200) */
     .exampleBlock img {
       display: block;
       margin: 0 auto;
@@ -215,6 +232,9 @@
   </style>
 </head>
 <body>
+  <!-- КНОПКА FULLSCREEN (всегда видна) -->
+  <button id="fullscreenButton">Fullscreen</button>
+
   <!-- МЕНЮ -->
   <div id="menuContainer">
     <!-- ВЕРХНЯЯ ЧАСТЬ -->
