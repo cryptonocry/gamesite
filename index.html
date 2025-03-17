@@ -31,6 +31,42 @@
       color: #021013;
     }
 
+    /* ====== TOP NAV BAR (ANOMALIES, STRAY, ARCANUM) ====== */
+    #topNav {
+      position: relative; /* чтобы не мешать fullscreenButton */
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      background: #021013;
+      /* небольшая полоса/отступ */
+      padding: 15px 0;
+    }
+    .navButton {
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background: #33484f; /* тёмный серо-синий */
+      color: #7AC0D6;
+    }
+    /* Активная игра (Anomalies) – голубой фон */
+    .navActive {
+      background: #7AC0D6;
+      color: #021013;
+    }
+    /* Неактивная (SOON) – полупрозрачная и курсор не меняется */
+    .navDisabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .navDisabled:hover {
+      background: #33484f; /* не меняется при hover */
+    }
+
     /* ====== LOGIN OVERLAY (ВВОД КОШЕЛЬКА) ====== */
     #loginContainer {
       position: absolute;
@@ -83,50 +119,46 @@
       width: 100%;
       height: 100%;
       display: none; /* Показываем только при gameState="menu" */
-      flex-direction: column; /* Три горизонтальных секции (top/center/bottom) */
+      flex-direction: column; /* Три вертикальные секции */
       background: #021013;
       color: #7AC0D6;
     }
 
-    /* Верхняя часть ( ~15% ) */
-  #topSection {
-  flex: 0 0 auto;         
-  padding: 40px 0 20px 0; /* Вместо padding-bottom:10px; можно сразу указать 4 значения 
-                             (в порядке top, right, bottom, left). 
-                             Здесь 20px сверху, 10px снизу. */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
+    /* topSection, centerSection, bottomSection – складываются вертикально */
+    /* ===== ВЕРХНЯЯ ЧАСТЬ (НАЗВАНИЕ, ПОДЗАГОЛОВОК) ===== */
+    #topSection {
+      flex: 0 0 auto;         
+      padding: 30px 0 20px 0; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
     #topSection h1 {
       font-size: 56px; 
       margin: 0;
     }
     #topSection p {
-      margin: 6px 0 0 0; /* Уменьшили вертикальный отступ */
+      margin: 6px 0 0 0;
       font-size: 22px;
     }
 
-    /* Средняя часть ( ~65% ) */
+    /* ===== СРЕДНЯЯ ЧАСТЬ (Кнопки слева, Текст справа) ===== */
     #centerSection {
-  flex: 0 0 auto;         
-  padding: 40px 0 20px 0; /* Вместо padding-bottom:10px; можно сразу указать 4 значения 
-                             (в порядке top, right, bottom, left). 
-                             Здесь 20px сверху, 10px снизу. */
+      flex: 0 0 auto;         
       display: flex;
-      align-items: center; /* Вертикальное выравнивание */
-      justify-content: space-evenly; /* Пространство между колонками */
+      align-items: center; 
+      justify-content: space-evenly; 
       padding: 20px;
       box-sizing: border-box;
     }
-    /* Левая колонка: кнопки */
+    /* Левая колонка: три кнопки */
     #centerLeft {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 20px; /* Расстояние между кнопками */
+      gap: 20px;
     }
     .menuButton {
       width: 220px;
@@ -148,12 +180,11 @@
       background: #b33838 !important;
       color: #fff !important;
     }
-    /* Анимация при наведении – чуть затемним */
     .buyButton:hover {
       background: #9f2f2f !important;
     }
 
-    /* Правая колонка: инструкция */
+    /* Правая колонка: Objective / Controls */
     #centerRight {
       width: 50%;
       font-size: 20px;
@@ -172,16 +203,16 @@
       font-weight: bold;
     }
 
-    /* Нижняя часть ( ~20% ) */
-   #bottomSection {
-  flex: 0 0 auto; 
-  /* убираем flex:1 */
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 30px; /* можно уменьшить gap для сокращения отступа между картинками */
-}
+    /* ===== НИЖНЯЯ ЧАСТЬ (примеры цифр) ===== */
+    #bottomSection {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      padding-bottom: 20px; /* чтобы картинки не липли к самому низу */
+    }
     .exampleBlock {
       text-align: center;
     }
@@ -201,7 +232,7 @@
       top: 0; left: 0;
       width: 100vw;
       height: 100vh;
-      display: none; /* Показываем когда gameState="game" */
+      display: none; 
       background: #021013;
     }
 
@@ -287,6 +318,13 @@
   <!-- FULLSCREEN BUTTON -->
   <button id="fullscreenButton">Fullscreen</button>
 
+  <!-- TOP NAV BAR (игры) -->
+  <div id="topNav">
+    <button class="navButton navActive">ANOMALIES</button>
+    <button class="navButton navDisabled">STRAY (SOON)</button>
+    <button class="navButton navDisabled">ARCANUM (SOON)</button>
+  </div>
+
   <!-- LOGIN OVERLAY -->
   <div id="loginContainer">
     <div id="loginContent">
@@ -305,15 +343,15 @@
       <p>Collect as many unusual digits as you can in 60 seconds!</p>
     </div>
 
-    <!-- ЦЕНТРАЛЬНАЯ ЧАСТЬ -->
+    <!-- СРЕДНЯЯ ЧАСТЬ -->
     <div id="centerSection">
-      <!-- Левая колонка: три кнопки -->
+      <!-- Левая колонка (Start, Records, Token) -->
       <div id="centerLeft">
         <button id="btnStart"   class="menuButton">Start Game</button>
         <button id="btnRecords" class="menuButton">Records</button>
         <button id="btnBuy"     class="menuButton buyButton">BUY TOKEN</button>
       </div>
-      <!-- Правая колонка: увеличенный текст -->
+      <!-- Правая колонка (Objective, Controls) -->
       <div id="centerRight">
         <h3>Objective</h3>
         <p>In 60 seconds, find as many upside-down and strange digits as possible. Each one you collect increases your score.</p>
@@ -326,7 +364,7 @@
       </div>
     </div>
 
-    <!-- НИЖНЯЯ ЧАСТЬ: примеры (текст над картинками) -->
+    <!-- НИЖНЯЯ ЧАСТЬ (примеры цифр) -->
     <div id="bottomSection">
       <div class="exampleBlock">
         <h3>Upside-down digits</h3>
