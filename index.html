@@ -14,7 +14,7 @@
       font-family: Arial, sans-serif;
     }
 
-    /* ====== КНОПКА FULLSCREEN (в правом верхнем углу) ====== */
+    /* ====== FULLSCREEN BUTTON ====== */
     #fullscreenButton {
       position: absolute;
       top: 10px;
@@ -31,6 +31,51 @@
       color: #021013;
     }
 
+    /* ====== LOGIN OVERLAY (ВВОД КОШЕЛЬКА) ====== */
+    #loginContainer {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: none;
+      z-index: 101;
+      background: rgba(0, 0, 0, 0.8);
+    }
+    #loginContent {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #021013;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      text-align: center;
+      color: #7AC0D6;
+    }
+    #loginContent h2 {
+      margin: 0 0 15px 0;
+      font-size: 24px;
+    }
+    #loginContent input {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      width: 90%;
+      font-size: 16px;
+    }
+    #loginContent button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: #7AC0D6;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #loginContent button:hover {
+      background: #fff;
+      color: #021013;
+    }
+
     /* ====== МЕНЮ (корневой контейнер) ====== */
     #menuContainer {
       position: absolute;
@@ -43,9 +88,9 @@
       color: #7AC0D6;
     }
 
-    /* Верхняя часть ( ~25% ) */
+    /* Верхняя часть ( ~15% ) */
     #topSection {
-      flex: 0 0 25%;
+      flex: 0 0 15%;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -57,13 +102,13 @@
       margin: 0;
     }
     #topSection p {
-      margin: 10px 0 0 0;
+      margin: 6px 0 0 0; /* Уменьшили вертикальный отступ */
       font-size: 22px;
     }
 
-    /* Средняя часть ( ~55% ) */
+    /* Средняя часть ( ~65% ) */
     #centerSection {
-      flex: 0 0 55%;
+      flex: 0 0 65%;
       display: flex;
       align-items: center; /* Вертикальное выравнивание */
       justify-content: space-evenly; /* Пространство между колонками */
@@ -232,8 +277,18 @@
   </style>
 </head>
 <body>
-  <!-- КНОПКА FULLSCREEN (всегда видна) -->
+  <!-- FULLSCREEN BUTTON -->
   <button id="fullscreenButton">Fullscreen</button>
+
+  <!-- LOGIN OVERLAY -->
+  <div id="loginContainer">
+    <div id="loginContent">
+      <h2>Enter your BTC Taproot wallet</h2>
+      <input id="walletInput" type="text" placeholder="62 chars lowercase [a-z0-9]" maxlength="62" />
+      <button id="loginOkButton">OK</button>
+      <button id="loginCancelButton">Cancel</button>
+    </div>
+  </div>
 
   <!-- МЕНЮ -->
   <div id="menuContainer">
