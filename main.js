@@ -7,15 +7,13 @@ import {
   generateChunk, ensureVisibleChunks, drawCells,
   bfsCollectValue, bfsCollectAnomaly, getClickedDigit
 } from "./game.js";
-
 import { fetchAllParticipantsFromXano } from "./api.js";
 
 // ---------- HTML ELEMENTS ----------
 const fullscreenButton   = document.getElementById("fullscreenButton");
 
-// Ваша верхняя панель
-// const topNav = document.getElementById("topNav"); 
-// Не скрываем её нигде, чтобы не пропадала
+// <-- Получаем ссылку на панель игр #topNav
+const topNav             = document.getElementById("topNav");
 
 const loginContainer     = document.getElementById("loginContainer");
 const walletInput        = document.getElementById("walletInput");
@@ -177,7 +175,7 @@ gameCanvas.addEventListener("click", (e) => {
   const anomaly = digit.anomaly;
   const currentTime = performance.now();
 
-  // Аномалия
+  // Собираем аномалии
   if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
     const group = bfsCollectAnomaly(gx, gy, anomaly);
     if (group.length >= 5) {
@@ -200,7 +198,7 @@ gameCanvas.addEventListener("click", (e) => {
     }
   }
 
-  // Одинаковые по значению
+  // Собираем одинаковые по значению
   const groupVal = bfsCollectValue(gx, gy);
   if (groupVal.length >= 5) {
     const fx = gameCanvas.width / 4;
@@ -237,7 +235,6 @@ function updateGame(dt) {
   ensureVisibleChunks(cameraX, cameraY, gameCanvas.width, gameCanvas.height);
   flyingDigits = flyingDigits.filter(fd => (now - fd.startTime) < fd.duration);
 
-  // Возвращаем удалённые клетки через 2 секунды
   for (let k in slotsToRespawn) {
     if (now >= slotsToRespawn[k]) {
       const [gx, gy] = k.split("_").map(Number);
@@ -249,6 +246,7 @@ function updateGame(dt) {
   }
 }
 
+// ---------- DRAW GAME ----------
 function drawGame() {
   ctx.fillStyle = "#021013";
   ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
@@ -256,6 +254,7 @@ function drawGame() {
 
   drawCells(ctx, cameraX, cameraY, gameCanvas.width, gameCanvas.height);
 
+  // Летающие цифры
   for (let fd of flyingDigits) {
     fd.draw(ctx, now);
   }
@@ -275,7 +274,7 @@ function drawGame() {
     ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + gameCanvas.width / 4, rectY + FOLDER_HEIGHT / 2);
   }
 
-  // Score
+  // Счёт
   ctx.save();
   ctx.font = "24px Arial";
   const scoreText = `Score: ${scoreTotal}`;
@@ -287,7 +286,7 @@ function drawGame() {
   ctx.fillText(scoreText, 15, 32);
   ctx.restore();
 
-  // Timer
+  // Таймер
   ctx.save();
   ctx.font = "24px Arial";
   const timerText = `${Math.floor(timeLeft)} s.`;
@@ -301,11 +300,13 @@ function drawGame() {
   ctx.fillText(timerText, tx, ty);
   ctx.restore();
 
-  // Анимации +N s
+  // Анимации "+N s"
   for (const k in timeAnimations) {
     const anim = timeAnimations[k];
     const keep = anim.draw(ctx, now);
-    if (!keep) delete timeAnimations[k];
+    if (!keep) {
+      delete timeAnimations[k];
+    }
   }
 }
 
@@ -324,7 +325,7 @@ requestAnimationFrame(gameLoop);
 
 // ---------- START GAME ----------
 function startGame() {
-  // Reset
+  // Сброс
   for (const k in cells) delete cells[k];
   generatedChunks.clear();
   folderScores[0] = 0;
@@ -356,7 +357,8 @@ function updateUI() {
     recordsContainer.style.display = "none";
     loginContainer.style.display   = "none";
 
-    // ВАЖНО: Не трогаем #topNav, пусть останется всегда visible
+    // Показываем верхнюю панель только в меню
+    topNav.style.display = "flex";
 
   } else if (gameState === "game") {
     menuContainer.style.display   = "none";
@@ -365,6 +367,9 @@ function updateUI() {
     recordsContainer.style.display= "none";
     loginContainer.style.display  = "none";
 
+    // Скрываем верхнюю панель в игре
+    topNav.style.display = "none";
+
   } else if (gameState === "game_over") {
     menuContainer.style.display   = "none";
     gameCanvas.style.display      = "block";
@@ -372,8 +377,11 @@ function updateUI() {
     loginContainer.style.display  = "none";
     finalScore.textContent = `Your score: ${lastScore}`;
     gameOverOverlay.style.display = "block";
+
+    // Скрываем верхнюю панель и в game_over
+    topNav.style.display = "none";
   }
 }
 
-// При загрузке → показываем меню
+// При старте → показываем меню
 updateUI();
