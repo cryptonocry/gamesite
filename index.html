@@ -19,7 +19,7 @@
       position: absolute;
       top: 10px;
       right: 10px;
-      z-index: 300;
+      z-index: 300; /* Чтобы кнопка всегда была над панелью */
       padding: 10px 15px;
       background: #7AC0D6;
       border: none;
@@ -33,11 +33,10 @@
 
     /* ====== TOP NAV BAR (ANOMALIES, STRAY, ARCANUM) ====== */
     #topNav {
-      /* Меняем на absolute + z-index повыше, чтобы не перекрывало menuContainer */
       position: absolute; 
       top: 0; left: 0;
       width: 100%;
-      z-index: 200; /* <-- Это исправит "исчезание" */
+      z-index: 200; 
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -73,8 +72,7 @@
     #loginContainer {
       position: absolute;
       top: 0; left: 0;
-      width: 100%; 
-      height: 100%;
+      width: 100%; height: 100%;
       display: none;
       z-index: 101;
       background: rgba(0, 0, 0, 0.8);
@@ -118,14 +116,18 @@
     /* ====== МЕНЮ (корневой контейнер) ====== */
     #menuContainer {
       position: absolute;
-      top: 0; left: 0;
+      top: 0; 
+      left: 0;
       width: 100%;
       height: 100%;
       display: none; /* Показываем только при gameState="menu" */
       flex-direction: column; /* Три вертикальные секции */
       background: #021013;
       color: #7AC0D6;
-      z-index: 100; /* <-- Ниже, чем topNav (200) */
+      z-index: 100; /* Ниже #topNav */
+      /* <-- Главная правка: сдвигаем всё вниз на 80px, 
+         чтобы панель не перекрывала заголовок */
+      margin-top: 80px;
     }
 
     /* ВЕРХНЯЯ ЧАСТЬ (НАЗВАНИЕ, ПОДЗАГОЛОВОК) */
@@ -244,8 +246,7 @@
       display: none;
       position: absolute;
       top: 0; left: 0;
-      width: 100%; 
-      height: 100%;
+      width: 100%; height: 100%;
       background: rgba(0,0,0,0.75);
       color: #7AC0D6;
     }
@@ -281,8 +282,7 @@
     #recordsContainer {
       position: absolute;
       top: 0; left: 0;
-      width: 100%; 
-      height: 100%;
+      width: 100%; height: 100%;
       background: rgba(0,0,0,0.9);
       display: none;
       z-index: 999;
