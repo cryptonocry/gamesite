@@ -10,28 +10,26 @@ import {
 import { fetchAllParticipantsFromXano } from "./api.js";
 
 // ---------- HTML ELEMENTS ----------
-const fullscreenButton   = document.getElementById("fullscreenButton");
+const fullscreenButton = document.getElementById("fullscreenButton");
+const topNav           = document.getElementById("topNav"); // <-- Панель игр
 
-// <-- Получаем ссылку на панель игр #topNav
-const topNav             = document.getElementById("topNav");
+const loginContainer   = document.getElementById("loginContainer");
+const walletInput      = document.getElementById("walletInput");
+const loginOkButton    = document.getElementById("loginOkButton");
+const loginCancelButton= document.getElementById("loginCancelButton");
 
-const loginContainer     = document.getElementById("loginContainer");
-const walletInput        = document.getElementById("walletInput");
-const loginOkButton      = document.getElementById("loginOkButton");
-const loginCancelButton  = document.getElementById("loginCancelButton");
+const menuContainer    = document.getElementById("menuContainer");
+const btnStart         = document.getElementById("btnStart");
+const btnRecords       = document.getElementById("btnRecords");
+const btnBuy           = document.getElementById("btnBuy");
 
-const menuContainer      = document.getElementById("menuContainer");
-const btnStart           = document.getElementById("btnStart");
-const btnRecords         = document.getElementById("btnRecords");
-const btnBuy             = document.getElementById("btnBuy");
+const gameCanvas       = document.getElementById("gameCanvas");
+const ctx              = gameCanvas.getContext("2d");
 
-const gameCanvas         = document.getElementById("gameCanvas");
-const ctx                = gameCanvas.getContext("2d");
-
-const gameOverOverlay    = document.getElementById("gameOverOverlay");
-const finalScore         = document.getElementById("finalScore");
-const btnMenuOver        = document.getElementById("btnMenu");
-const btnRestartOver     = document.getElementById("btnRestart");
+const gameOverOverlay  = document.getElementById("gameOverOverlay");
+const finalScore       = document.getElementById("finalScore");
+const btnMenuOver      = document.getElementById("btnMenu");
+const btnRestartOver   = document.getElementById("btnRestart");
 
 const recordsContainer      = document.getElementById("recordsContainer");
 const recordsTableContainer = document.getElementById("recordsTableContainer");
@@ -41,7 +39,7 @@ const closeRecordsButton    = document.getElementById("closeRecordsButton");
 let gameState  = "menu"; 
 let currentPlayer = null;
 
-const START_TIME    = 60;
+const START_TIME = 60;
 const FOLDER_HEIGHT = 80;
 let scoreTotal = 0;
 let timeLeft   = START_TIME;
@@ -59,6 +57,8 @@ let lastScore = 0;
 
 // ---------- FULLSCREEN BUTTON ----------
 fullscreenButton.addEventListener("click", () => {
+  // Вместо gameCanvas.requestFullscreen() можно сделать document.documentElement.requestFullscreen(),
+  // если хотите, чтобы всё меню тоже было видно в fullscreen.
   if (!document.fullscreenElement) {
     gameCanvas.requestFullscreen();
   } else {
@@ -252,9 +252,10 @@ function drawGame() {
   ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
   const now = performance.now();
 
+  // Рисуем клетки
   drawCells(ctx, cameraX, cameraY, gameCanvas.width, gameCanvas.height);
 
-  // Летающие цифры
+  // Рисуем летающие цифры
   for (let fd of flyingDigits) {
     fd.draw(ctx, now);
   }
@@ -300,7 +301,7 @@ function drawGame() {
   ctx.fillText(timerText, tx, ty);
   ctx.restore();
 
-  // Анимации "+N s"
+  // Анимации +N s
   for (const k in timeAnimations) {
     const anim = timeAnimations[k];
     const keep = anim.draw(ctx, now);
@@ -351,37 +352,41 @@ function startGame() {
 // ---------- UPDATE UI ----------
 function updateUI() {
   if (gameState === "menu") {
+    // Показываем меню
     menuContainer.style.display = "flex";
     gameCanvas.style.display    = "none";
     gameOverOverlay.style.display = "none";
     recordsContainer.style.display = "none";
     loginContainer.style.display   = "none";
 
-    // Показываем верхнюю панель только в меню
+    // Показываем верхнюю панель с тремя играми
     topNav.style.display = "flex";
 
   } else if (gameState === "game") {
+    // Прячем меню
     menuContainer.style.display   = "none";
     gameCanvas.style.display      = "block";
     gameOverOverlay.style.display = "none";
     recordsContainer.style.display= "none";
     loginContainer.style.display  = "none";
 
-    // Скрываем верхнюю панель в игре
+    // Скрываем верхнюю панель во время игры
     topNav.style.display = "none";
 
   } else if (gameState === "game_over") {
+    // Показываем холст, прячем меню
     menuContainer.style.display   = "none";
     gameCanvas.style.display      = "block";
     recordsContainer.style.display= "none";
     loginContainer.style.display  = "none";
+
     finalScore.textContent = `Your score: ${lastScore}`;
     gameOverOverlay.style.display = "block";
 
-    // Скрываем верхнюю панель и в game_over
+    // Скрываем верхнюю панель и на экране game_over
     topNav.style.display = "none";
   }
 }
 
-// При старте → показываем меню
+// При загрузке → меню
 updateUI();
