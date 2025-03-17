@@ -4,18 +4,18 @@
   <meta charset="UTF-8">
   <title>Anomalies Game</title>
   <style>
-    /* Базовые стили */
     html, body {
       margin: 0;
       padding: 0;
       width: 100vw;
       height: 100vh;
-      overflow: hidden;
       background: #021013;
       font-family: Arial, sans-serif;
+      /* Убираем overflow:hidden, чтобы при маленьких экранах скролл был доступен */
+      /* overflow: hidden; */ 
     }
 
-    /* Кнопка Fullscreen */
+    /* Fullscreen button */
     #fullscreenButton {
       position: absolute;
       top: 10px;
@@ -32,9 +32,8 @@
       color: #021013;
     }
 
-    /* ==== Верхняя панель с тремя играми ==== */
+    /* ===== Шапка (topNav) с тремя кнопками */
     #topNav {
-      position: relative; /* не мешает fullscreenButton */
       width: 100%;
       display: flex;
       flex-direction: row;
@@ -43,7 +42,9 @@
       gap: 30px;
       background: #021013;
       padding: 15px 0;
-      z-index: 50; /* чтобы панель была над фоном, но под fullscreenButton */
+      box-sizing: border-box;
+      /* z-index: 50; */
+      /* По умолчанию снизу нет fixed, значит будет прокручиваться вместе со страницей */
     }
     .navButton {
       padding: 10px 20px;
@@ -54,110 +55,56 @@
       background: #33484f; /* тёмный серо-синий */
       color: #7AC0D6;
     }
-    .navActive {
+    .navButton.navActive {
       background: #7AC0D6;
       color: #021013;
     }
-    .navDisabled {
+    .navButton.navDisabled {
       opacity: 0.5;
       cursor: default;
     }
-    .navDisabled:hover {
-      background: #33484f; /* не меняем цвет при hover */
+    .navButton.navDisabled:hover {
+      background: #33484f; 
     }
 
-    /* Оверлей ввода кошелька */
-    #loginContainer {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      display: none;
-      z-index: 101;
-      background: rgba(0, 0, 0, 0.8);
-    }
-    #loginContent {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: #021013;
-      padding: 20px;
-      border-radius: 10px;
-      width: 300px;
-      text-align: center;
-      color: #7AC0D6;
-    }
-    #loginContent h2 {
-      margin: 0 0 15px 0;
-      font-size: 24px;
-    }
-    #loginContent input {
-      display: block;
-      margin: 10px auto;
-      padding: 10px;
-      width: 90%;
-      font-size: 16px;
-    }
-    #loginContent button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      background: #7AC0D6;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    #loginContent button:hover {
-      background: #fff;
-      color: #021013;
-    }
-
-    /* Корневой контейнер меню (под панелью #topNav) */
+    /* ===== Основное меню под шапкой ===== */
     #menuContainer {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      display: none; /* виден только при gameState="menu" */
-      flex-direction: column;
+      display: none; /* Показываем при gameState="menu" */
       background: #021013;
       color: #7AC0D6;
-      z-index: 1; /* панель #topNav вверху, но мы не скрываем её */
+      /* Задаём отступ сверху, чтобы не налезать на #topNav */
+      padding-top: 30px; 
+      box-sizing: border-box;
     }
 
-    /* Верхний блок с названием/описанием */
+    /* topSection, centerSection, bottomSection идут друг под другом */
     #topSection {
-      flex: 0 0 auto;         
-      padding: 30px 0 20px 0; 
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
       text-align: center;
+      padding: 20px 0;
     }
     #topSection h1 {
-      font-size: 56px; 
+      font-size: 56px;
       margin: 0;
     }
     #topSection p {
-      margin: 6px 0 0 0; 
+      margin: 5px 0 0 0;
       font-size: 22px;
     }
 
-    /* Средний блок (кнопки слева + текст справа) */
     #centerSection {
-      flex: 0 0 auto;         
       display: flex;
-      align-items: center; 
-      justify-content: space-evenly;
-      padding: 20px;
+      flex-direction: row;
+      align-items: flex-start; 
+      justify-content: center;
+      gap: 50px; 
+      padding: 20px 0;
       box-sizing: border-box;
     }
     #centerLeft {
       display: flex;
       flex-direction: column;
-      align-items: center;
       gap: 20px;
+      align-items: center;
     }
     .menuButton {
       width: 220px;
@@ -181,9 +128,8 @@
       background: #9f2f2f !important;
     }
 
-    /* Правая колонка: Objective, Controls */
     #centerRight {
-      width: 50%;
+      width: 400px; /* жёсткая ширина, можно адаптировать */
       font-size: 20px;
       line-height: 1.4;
     }
@@ -192,49 +138,66 @@
       margin-bottom: 10px;
       font-size: 24px;
     }
-    #centerRight p {
-      margin-bottom: 15px;
-    }
     .highlight {
       color: #b33838;
       font-weight: bold;
     }
 
-    /* Нижняя часть (примеры) */
     #bottomSection {
-      flex: 0 0 auto;
       display: flex;
       flex-direction: row;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      gap: 30px;
-      padding-bottom: 20px; 
+      gap: 60px;
+      padding: 20px 0 50px 0; /* чуть больше снизу */
     }
     .exampleBlock {
       text-align: center;
     }
     .exampleBlock h3 {
-      margin: 0 0 10px 0;
+      margin: 0 0 10px;
       font-size: 22px;
     }
     .exampleBlock img {
       display: block;
       margin: 0 auto;
-      max-width: 400px; 
+      max-width: 400px;
     }
 
-    /* CANVAS (игра) */
+    /* CANVAS (game) */
     #gameCanvas {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100vw;
-      height: 100vh;
       display: none; 
       background: #021013;
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      top: 0; left: 0;
       z-index: 0;
     }
 
-    /* Оверлей "Time's up!" */
+    /* LOGIN overlay */
+    #loginContainer {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      z-index: 101;
+      background: rgba(0, 0, 0, 0.8);
+    }
+    #loginContent {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #021013;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      text-align: center;
+      color: #7AC0D6;
+    }
+
+    /* GAME OVER overlay */
     #gameOverOverlay {
       display: none;
       position: absolute;
@@ -250,14 +213,6 @@
       transform: translate(-50%, -50%);
       text-align: center;
     }
-    #gameOverContent h1 {
-      font-size: 36px;
-      margin: 0 0 20px 0;
-    }
-    #gameOverContent p {
-      margin: 20px 0;
-      font-size: 24px;
-    }
     .goButton {
       margin: 10px;
       padding: 10px 20px;
@@ -272,11 +227,12 @@
       background: #fff;
     }
 
-    /* Оверлей рекордов */
+    /* RECORDS overlay */
     #recordsContainer {
       position: absolute;
       top: 0; left: 0;
-      width: 100%; height: 100%;
+      width: 100%; 
+      height: 100%;
       background: rgba(0,0,0,0.9);
       display: none;
       z-index: 999;
@@ -314,17 +270,17 @@
   </style>
 </head>
 <body>
-  <!-- КНОПКА FULLSCREEN -->
+  <!-- FULLSCREEN BUTTON -->
   <button id="fullscreenButton">Fullscreen</button>
 
-  <!-- ВЕРХНЯЯ ПАНЕЛЬ (3 кнопки) -->
+  <!-- TOP NAV (3 games) -->
   <div id="topNav">
     <button class="navButton navActive">ANOMALIES</button>
     <button class="navButton navDisabled">STRAY (SOON)</button>
     <button class="navButton navDisabled">ARCANUM (SOON)</button>
   </div>
 
-  <!-- Оверлей ввода кошелька -->
+  <!-- LOGIN OVERLAY -->
   <div id="loginContainer">
     <div id="loginContent">
       <h2>Enter your BTC Taproot wallet</h2>
@@ -334,15 +290,15 @@
     </div>
   </div>
 
-  <!-- МЕНЮ -->
+  <!-- MENU CONTAINER -->
   <div id="menuContainer">
-    <!-- ВЕРХНЯЯ ЧАСТЬ (НАЗВАНИЕ, ОПИСАНИЕ) -->
+    <!-- topSection -->
     <div id="topSection">
       <h1>ANOMALIES GAME</h1>
       <p>Collect as many unusual digits as you can in 60 seconds!</p>
     </div>
 
-    <!-- СРЕДНЯЯ ЧАСТЬ (Кнопки слева, Objective/Controls справа) -->
+    <!-- centerSection (buttons + text) -->
     <div id="centerSection">
       <div id="centerLeft">
         <button id="btnStart"   class="menuButton">Start Game</button>
@@ -361,7 +317,7 @@
       </div>
     </div>
 
-    <!-- НИЖНЯЯ ЧАСТЬ (2 картинки) -->
+    <!-- bottomSection (two images) -->
     <div id="bottomSection">
       <div class="exampleBlock">
         <h3>Upside-down digits</h3>
@@ -374,10 +330,10 @@
     </div>
   </div>
 
-  <!-- CANVAS (игра) -->
+  <!-- GAME CANVAS -->
   <canvas id="gameCanvas"></canvas>
 
-  <!-- Оверлей TIME'S UP -->
+  <!-- GAME OVER OVERLAY -->
   <div id="gameOverOverlay">
     <div id="gameOverContent">
       <h1>Time's up!</h1>
@@ -387,7 +343,7 @@
     </div>
   </div>
 
-  <!-- Оверлей рекордов -->
+  <!-- RECORDS OVERLAY -->
   <div id="recordsContainer">
     <div id="recordsContent">
       <h2>Ranking</h2>
@@ -396,7 +352,7 @@
     </div>
   </div>
 
-  <!-- Основной скрипт -->
+  <!-- Main Script -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
