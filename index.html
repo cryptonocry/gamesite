@@ -4,32 +4,31 @@
   <meta charset="UTF-8">
   <title>Anomalies Game</title>
   <style>
+    /* Сброс базовых стилей */
     html, body {
-      margin: 0;
+      margin: 0; 
       padding: 0;
-      min-width: 320px;
-      min-height: 400px;
-      background: #021013;
+      min-width: 320px; 
+      min-height: 480px;
       font-family: Arial, sans-serif;
-      /* Дадим возможность прокрутки, если контента много */
+      background: #021013;
+      color: #7AC0D6;
+      /* Разрешаем вертикальную прокрутку (если нужно) */
       overflow-x: hidden;
-      overflow-y: auto; 
+      overflow-y: auto;
     }
 
-    /* ===== ШАПКА С ТРЕМЯ КНОПКАМИ (FIXED) ===== */
+    /* ====== Верхняя панель с играми (fixed) ====== */
     #topNav {
       position: fixed; 
-      top: 0; 
-      left: 0;
+      top: 0; left: 0;
       width: 100%;
       display: flex;
-      flex-direction: row;
-      align-items: center;
       justify-content: center;
       gap: 30px;
-      background: #021013;
       padding: 15px 0;
-      z-index: 100; /* чтобы шапка всегда сверху */
+      background: #021013;
+      z-index: 100;
     }
     .navButton {
       padding: 10px 20px;
@@ -37,7 +36,7 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
-      background: #33484f;
+      background: #33484f; 
       color: #7AC0D6;
     }
     .navActive {
@@ -49,15 +48,15 @@
       cursor: default;
     }
     .navDisabled:hover {
-      background: #33484f; 
+      background: #33484f;
     }
 
-    /* ===== FULLSCREEN BUTTON (в правом верхнем углу) ===== */
+    /* Кнопка Fullscreen (fixed) */
     #fullscreenButton {
       position: fixed;
       top: 10px;
       right: 10px;
-      z-index: 110; 
+      z-index: 110;
       padding: 10px 15px;
       background: #7AC0D6;
       border: none;
@@ -69,53 +68,32 @@
       color: #021013;
     }
 
-    /* ===== МЕНЮ (под шапкой) ===== */
+    /* ====== Основное меню (не fixed, но под шапкой) ====== */
     #menuContainer {
-      /* отступ сверху, чтобы не налезать на фиксированную шапку */
-      margin-top: 80px; 
-      /* остальное контент */
-      display: none;  /* показываем при gameState="menu" */
-      color: #7AC0D6;
+      /* Отодвигаем вниз, чтобы не налезать на #topNav (который height ~ 50-60px) */
+      margin-top: 70px; 
       padding: 20px;
-      box-sizing: border-box;
+      display: none; /* Показываем при gameState="menu" */
     }
 
-    /* Строка 1: Левая колонка (title+buttons), Правая колонка (Objective...) */
-    #menuRow1 {
-      display: flex;
-      flex-direction: row;
-      align-items: flex-start; 
-      justify-content: space-around;
-      flex-wrap: wrap; /* чтобы на узких экранах переносилось */
-      gap: 40px;
-      margin-bottom: 30px; 
+    /* = ЛЕВАЯ ЧАСТЬ: Заголовок, подзаголовок, три кнопки */
+    #leftSide {
+      float: left; /* ставим слева */
+      width: 300px; /* или 350px, как удобнее */
+      margin-right: 40px; /* отступ до правого блока */
     }
-
-    /* Левая колонка: big title + subtitle + 3 menu buttons */
-    #leftCol {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      min-width: 280px;
-      max-width: 400px;
-      gap: 15px;
-    }
-    /* Заголовок + sub */
-    #gameTitle {
+    #titleBig {
       font-size: 56px;
-      margin: 0;
+      margin: 0; 
     }
-    #gameSubtitle {
-      margin: 5px 0 0 0;
+    #titleSubtitle {
+      margin: 5px 0 20px 0;
       font-size: 22px;
-      color: #7AC0D6;
     }
-    /* Кнопки Start/Records/Buy */
-    .menuButtonsContainer {
+    .menuButtonList {
       display: flex;
       flex-direction: column;
       gap: 15px;
-      margin-top: 10px;
     }
     .menuButton {
       width: 220px;
@@ -139,42 +117,41 @@
       background: #9f2f2f !important;
     }
 
-    /* Правая колонка: Objective/Controls */
-    #rightCol {
-      display: flex;
-      flex-direction: column;
-      max-width: 500px;
+    /* = ПРАВАЯ ЧАСТЬ: Objective + Controls */
+    #rightSide {
+      /* очищаем float, чтобы внизу картинки встали под всей этой зоной */
+      margin-bottom: 30px;
     }
-    #rightCol h3 {
-      margin-top: 0;
-      margin-bottom: 10px;
+    #rightSide h3 {
       font-size: 24px;
+      margin: 0 0 10px 0;
     }
-    #rightCol p {
-      margin-bottom: 15px;
+    #rightSide p {
       font-size: 20px;
       line-height: 1.4;
+      margin-bottom: 15px;
     }
     .highlight {
       color: #b33838;
       font-weight: bold;
     }
 
-    /* Строка 2: Примеры Upside-down / Strange digits */
-    #menuRow2 {
+    /* = НИЖНЯЯ ЧАСТЬ: 2 колонки (Upside-down / Strange) */
+    #bottomExamples {
+      clear: both; /* чтобы встать ниже leftSide и rightSide */
       display: flex;
       flex-direction: row;
-      align-items: flex-start;
       justify-content: center;
       gap: 60px;
-      margin-bottom: 30px; 
-      flex-wrap: wrap;
+      margin-top: 20px;
+      margin-bottom: 40px;
+      flex-wrap: wrap; /* если экран узкий, чтобы переносились */
     }
     .exampleBlock {
       text-align: center;
     }
     .exampleBlock h3 {
-      margin: 0 0 10px;
+      margin: 0 0 10px 0;
       font-size: 22px;
     }
     .exampleBlock img {
@@ -183,9 +160,9 @@
       max-width: 400px;
     }
 
-    /* CANVAS */
+    /* = CANVAS (игра) = */
     #gameCanvas {
-      display: none; 
+      display: none;
       position: absolute;
       top: 0; left: 0;
       width: 100vw;
@@ -194,7 +171,7 @@
       z-index: 0;
     }
 
-    /* LOGIN OVERLAY */
+    /* = LOGIN OVERLAY = */
     #loginContainer {
       position: absolute;
       top: 0; left: 0;
@@ -216,7 +193,7 @@
       color: #7AC0D6;
     }
 
-    /* GAME OVER */
+    /* = GAME OVER OVERLAY = */
     #gameOverOverlay {
       display: none;
       position: absolute;
@@ -247,7 +224,7 @@
       background: #fff;
     }
 
-    /* RECORDS overlay */
+    /* = RECORDS OVERLAY = */
     #recordsContainer {
       position: absolute;
       top: 0; left: 0;
@@ -287,10 +264,12 @@
       border-radius: 5px;
       cursor: pointer;
     }
+
   </style>
 </head>
 <body>
-  <!-- ФИКСИРОВАННАЯ ШАПКА С ТРЕМЯ КНОПКАМИ -->
+
+  <!-- ШАПКА (3 игры) -->
   <div id="topNav">
     <button class="navButton navActive">ANOMALIES</button>
     <button class="navButton navDisabled">STRAY (SOON)</button>
@@ -310,48 +289,47 @@
     </div>
   </div>
 
-  <!-- MENU (под шапкой) -->
+  <!-- МЕНЮ -->
   <div id="menuContainer">
-    <!-- Первая строка: левая колонка (title + sub + 3btn), правая колонка (Objective/Controls) -->
-    <div id="menuRow1">
-      <div id="leftCol">
-        <h1 id="gameTitle">ANOMALIES GAME</h1>
-        <p id="gameSubtitle">Collect as many unusual digits as you can in 60 seconds!</p>
-        <div class="menuButtonsContainer">
-          <button id="btnStart"   class="menuButton">Start Game</button>
-          <button id="btnRecords" class="menuButton">Records</button>
-          <button id="btnBuy"     class="menuButton buyButton">BUY TOKEN</button>
-        </div>
-      </div>
-      <div id="rightCol">
-        <h3>Objective</h3>
-        <p>
-          In 60 seconds, find as many upside-down and strange digits as possible. 
-          Each one you collect increases your score.
-        </p>
-
-        <h3>Controls</h3>
-        <p>
-          <span class="highlight">Right-click + drag</span>: move the camera.<br/>
-          <span class="highlight">Left-click</span>: collect any abnormal digit.
-        </p>
+    <!-- Левая часть: big title + sub + 3 buttons. Справа: Objective/Controls -->
+    <div id="leftSide">
+      <h1 id="titleBig">ANOMALIES GAME</h1>
+      <p id="titleSubtitle">Collect as many unusual digits as you can in 60 seconds!</p>
+      <div class="menuButtonList">
+        <button id="btnStart"   class="menuButton">Start Game</button>
+        <button id="btnRecords" class="menuButton">Records</button>
+        <button id="btnBuy"     class="menuButton buyButton">BUY TOKEN</button>
       </div>
     </div>
 
-    <!-- Вторая строка: примеры Upside/Strange digits -->
-    <div id="menuRow2">
+    <div id="rightSide">
+      <h3>Objective</h3>
+      <p>
+        In 60 seconds, find as many upside-down and strange digits as possible. 
+        Each one you collect increases your score.
+      </p>
+
+      <h3>Controls</h3>
+      <p>
+        <span class="highlight">Right-click + drag</span>: move the camera.<br/>
+        <span class="highlight">Left-click</span>: collect any abnormal digit.
+      </p>
+    </div>
+
+    <!-- Ниже две колонки: Upside-down / Strange digits -->
+    <div id="bottomExamples">
       <div class="exampleBlock">
         <h3>Upside-down digits</h3>
-        <img src="1.jpg" alt="Upside-down digits" />
+        <img src="1.jpg" alt="Upside-down digits"/>
       </div>
       <div class="exampleBlock">
         <h3>Strange digits</h3>
-        <img src="2.jpg" alt="Strange digits" />
+        <img src="2.jpg" alt="Strange digits"/>
       </div>
     </div>
   </div>
 
-  <!-- CANVAS (игра) -->
+  <!-- CANVAS -->
   <canvas id="gameCanvas"></canvas>
 
   <!-- GAME OVER -->
@@ -373,7 +351,6 @@
     </div>
   </div>
 
-  <!-- MAIN SCRIPT -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
