@@ -11,7 +11,7 @@ import { fetchAllParticipantsFromXano } from "./api.js";
 
 // ---------- HTML ELEMENTS ----------
 const fullscreenButton = document.getElementById("fullscreenButton");
-const topNav           = document.getElementById("topNav"); // <-- Панель игр
+const topNav           = document.getElementById("topNav");
 
 const loginContainer   = document.getElementById("loginContainer");
 const walletInput      = document.getElementById("walletInput");
@@ -56,11 +56,12 @@ let lastUpdateTime = performance.now();
 let lastScore = 0;
 
 // ---------- FULLSCREEN BUTTON ----------
+// Теперь вызываем document.documentElement.requestFullscreen() - 
+// чтоб весь документ был fullscreen и кнопки оставались кликабельными
 fullscreenButton.addEventListener("click", () => {
-  // Вместо gameCanvas.requestFullscreen() можно сделать document.documentElement.requestFullscreen(),
-  // если хотите, чтобы всё меню тоже было видно в fullscreen.
   if (!document.fullscreenElement) {
-    gameCanvas.requestFullscreen();
+    // Вместо gameCanvas.requestFullscreen()
+    document.documentElement.requestFullscreen();
   } else {
     document.exitFullscreen();
   }
@@ -235,6 +236,7 @@ function updateGame(dt) {
   ensureVisibleChunks(cameraX, cameraY, gameCanvas.width, gameCanvas.height);
   flyingDigits = flyingDigits.filter(fd => (now - fd.startTime) < fd.duration);
 
+  // Возвращаем удалённые клетки через 2 секунды
   for (let k in slotsToRespawn) {
     if (now >= slotsToRespawn[k]) {
       const [gx, gy] = k.split("_").map(Number);
@@ -260,7 +262,7 @@ function drawGame() {
     fd.draw(ctx, now);
   }
 
-  // Папки снизу (Upside, Strange)
+  // Папки (Upside, Strange) внизу
   for (let i = 0; i < 2; i++) {
     const rectX = i * gameCanvas.width / 2;
     const rectY = gameCanvas.height - FOLDER_HEIGHT;
@@ -388,5 +390,5 @@ function updateUI() {
   }
 }
 
-// При загрузке → меню
+// При старте → меню
 updateUI();
