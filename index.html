@@ -4,23 +4,23 @@
   <meta charset="UTF-8">
   <title>Anomalies Game</title>
   <style>
-    /* Сброс базовых стилей */
+    /* Сброс и базовые стили */
     html, body {
-      margin: 0; 
+      margin: 0;
       padding: 0;
-      min-width: 320px; 
+      min-width: 320px;
       min-height: 480px;
-      font-family: Arial, sans-serif;
       background: #021013;
       color: #7AC0D6;
-      /* Разрешаем вертикальную прокрутку (если нужно) */
+      font-family: Arial, sans-serif;
+      /* Разрешаем вертикальную прокрутку при необходимости */
       overflow-x: hidden;
       overflow-y: auto;
     }
 
     /* ====== Верхняя панель с играми (fixed) ====== */
     #topNav {
-      position: fixed; 
+      position: fixed;
       top: 0; left: 0;
       width: 100%;
       display: flex;
@@ -68,27 +68,28 @@
       color: #021013;
     }
 
-    /* ====== Основное меню (не fixed, но под шапкой) ====== */
+    /* ====== Меню (под шапкой) ====== */
     #menuContainer {
-      /* Отодвигаем вниз, чтобы не налезать на #topNav (который height ~ 50-60px) */
+      /* отступ сверху, чтобы не закрываться шапкой (которая ~15px + 2*gap) */
       margin-top: 70px; 
       padding: 20px;
-      display: none; /* Показываем при gameState="menu" */
+      display: none; /* показываем при gameState="menu" */
     }
 
-    /* = ЛЕВАЯ ЧАСТЬ: Заголовок, подзаголовок, три кнопки */
-    #leftSide {
-      float: left; /* ставим слева */
-      width: 300px; /* или 350px, как удобнее */
-      margin-right: 40px; /* отступ до правого блока */
+    /* Левая колонка (большой заголовок, подзаголовок, три кнопки) */
+    #leftColumn {
+      float: left; /* чтобы справа можно было пустить "Objective" */
+      width: 300px; 
+      margin-right: 40px; 
     }
-    #titleBig {
+    #leftColumn h1 {
       font-size: 56px;
-      margin: 0; 
+      margin: 0;
     }
-    #titleSubtitle {
+    #leftColumn p {
       margin: 5px 0 20px 0;
       font-size: 22px;
+      color: #7AC0D6;
     }
     .menuButtonList {
       display: flex;
@@ -117,16 +118,17 @@
       background: #9f2f2f !important;
     }
 
-    /* = ПРАВАЯ ЧАСТЬ: Objective + Controls */
-    #rightSide {
-      /* очищаем float, чтобы внизу картинки встали под всей этой зоной */
-      margin-bottom: 30px;
+    /* Правая колонка (Objective, Controls) */
+    #rightColumn {
+      /* не используем float, а ниже очистим флоат (clear: both) перед картинками */
+      max-width: 600px; 
     }
-    #rightSide h3 {
+    #rightColumn h3 {
       font-size: 24px;
-      margin: 0 0 10px 0;
+      margin-top: 0;
+      margin-bottom: 10px;
     }
-    #rightSide p {
+    #rightColumn p {
       font-size: 20px;
       line-height: 1.4;
       margin-bottom: 15px;
@@ -136,16 +138,20 @@
       font-weight: bold;
     }
 
-    /* = НИЖНЯЯ ЧАСТЬ: 2 колонки (Upside-down / Strange) */
+    /* Очищаем float перед нижними картинками */
+    #clearFloats {
+      clear: both;
+      margin-top: 30px;
+    }
+
+    /* Две колонки с картинками */
     #bottomExamples {
-      clear: both; /* чтобы встать ниже leftSide и rightSide */
       display: flex;
       flex-direction: row;
-      justify-content: center;
       gap: 60px;
-      margin-top: 20px;
+      flex-wrap: wrap; /* чтобы на узком экране переносились */
+      justify-content: center;
       margin-bottom: 40px;
-      flex-wrap: wrap; /* если экран узкий, чтобы переносились */
     }
     .exampleBlock {
       text-align: center;
@@ -160,22 +166,22 @@
       max-width: 400px;
     }
 
-    /* = CANVAS (игра) = */
+    /* CANVAS (игра) */
     #gameCanvas {
-      display: none;
       position: absolute;
       top: 0; left: 0;
       width: 100vw;
       height: 100vh;
       background: #021013;
+      display: none;
       z-index: 0;
     }
 
-    /* = LOGIN OVERLAY = */
+    /* LOGIN overlay */
     #loginContainer {
       position: absolute;
       top: 0; left: 0;
-      width: 100%; 
+      width: 100%;
       height: 100%;
       display: none;
       z-index: 101;
@@ -193,7 +199,7 @@
       color: #7AC0D6;
     }
 
-    /* = GAME OVER OVERLAY = */
+    /* GAME OVER overlay */
     #gameOverOverlay {
       display: none;
       position: absolute;
@@ -224,7 +230,7 @@
       background: #fff;
     }
 
-    /* = RECORDS OVERLAY = */
+    /* RECORDS overlay */
     #recordsContainer {
       position: absolute;
       top: 0; left: 0;
@@ -269,14 +275,14 @@
 </head>
 <body>
 
-  <!-- ШАПКА (3 игры) -->
+  <!-- ШАПКА С ТРЕМЯ КНОПКАМИ (ANOMALIES, STRAY, ARCANUM) -->
   <div id="topNav">
     <button class="navButton navActive">ANOMALIES</button>
     <button class="navButton navDisabled">STRAY (SOON)</button>
     <button class="navButton navDisabled">ARCANUM (SOON)</button>
   </div>
 
-  <!-- FULLSCREEN BUTTON (FIXED) -->
+  <!-- FULLSCREEN BUTTON -->
   <button id="fullscreenButton">Fullscreen</button>
 
   <!-- LOGIN OVERLAY -->
@@ -289,10 +295,10 @@
     </div>
   </div>
 
-  <!-- МЕНЮ -->
+  <!-- MENu (под шапкой) -->
   <div id="menuContainer">
-    <!-- Левая часть: big title + sub + 3 buttons. Справа: Objective/Controls -->
-    <div id="leftSide">
+    <!-- Левая колонка: большой заголовок, подзаголовок, кнопки -->
+    <div id="leftColumn">
       <h1 id="titleBig">ANOMALIES GAME</h1>
       <p id="titleSubtitle">Collect as many unusual digits as you can in 60 seconds!</p>
       <div class="menuButtonList">
@@ -302,10 +308,11 @@
       </div>
     </div>
 
-    <div id="rightSide">
+    <!-- Правая колонка: Objective, Controls -->
+    <div id="rightColumn">
       <h3>Objective</h3>
       <p>
-        In 60 seconds, find as many upside-down and strange digits as possible. 
+        In 60 seconds, find as many upside-down and strange digits as possible.
         Each one you collect increases your score.
       </p>
 
@@ -316,7 +323,10 @@
       </p>
     </div>
 
-    <!-- Ниже две колонки: Upside-down / Strange digits -->
+    <!-- Очистка плавающих колонок -->
+    <div id="clearFloats"></div>
+
+    <!-- Нижние 2 колонки: Upside-down / Strange digits -->
     <div id="bottomExamples">
       <div class="exampleBlock">
         <h3>Upside-down digits</h3>
@@ -329,10 +339,10 @@
     </div>
   </div>
 
-  <!-- CANVAS -->
+  <!-- CANVAS (игра) -->
   <canvas id="gameCanvas"></canvas>
 
-  <!-- GAME OVER -->
+  <!-- GAME OVER OVERLAY -->
   <div id="gameOverOverlay">
     <div id="gameOverContent">
       <h1>Time's up!</h1>
