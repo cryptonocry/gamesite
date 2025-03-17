@@ -8,11 +8,14 @@ import {
   bfsCollectValue, bfsCollectAnomaly, getClickedDigit
 } from "./game.js";
 
-// Для примера, если нет отдельного ui.js
 import { fetchAllParticipantsFromXano } from "./api.js";
 
 // ---------- HTML ELEMENTS ----------
 const fullscreenButton   = document.getElementById("fullscreenButton");
+
+// Ваша верхняя панель
+// const topNav = document.getElementById("topNav"); 
+// Не скрываем её нигде, чтобы не пропадала
 
 const loginContainer     = document.getElementById("loginContainer");
 const walletInput        = document.getElementById("walletInput");
@@ -37,8 +40,8 @@ const recordsTableContainer = document.getElementById("recordsTableContainer");
 const closeRecordsButton    = document.getElementById("closeRecordsButton");
 
 // ---------- GAME STATE ----------
-let gameState  = "menu"; // "menu", "game", "game_over"
-let currentPlayer = null; // { wallet, score }
+let gameState  = "menu"; 
+let currentPlayer = null;
 
 const START_TIME    = 60;
 const FOLDER_HEIGHT = 80;
@@ -67,14 +70,11 @@ fullscreenButton.addEventListener("click", () => {
 
 // ---------- MENU BUTTONS ----------
 btnStart.addEventListener("click", () => {
-  // Показываем оверлей ввода кошелька
   showLoginOverlay();
 });
-
 btnRecords.addEventListener("click", () => {
   showRecordsOverlay();
 });
-
 btnBuy.addEventListener("click", () => {
   alert("Here you can implement your token purchase logic.");
 });
@@ -82,7 +82,6 @@ btnBuy.addEventListener("click", () => {
 // ---------- LOGIN OVERLAY ----------
 loginOkButton.addEventListener("click", () => {
   const wallet = walletInput.value.trim().toLowerCase();
-  // Проверка
   if (!wallet) {
     alert("Wallet is required!");
     return;
@@ -95,12 +94,9 @@ loginOkButton.addEventListener("click", () => {
   loginContainer.style.display = "none";
   startGame();
 });
-
 loginCancelButton.addEventListener("click", () => {
-  // Прячем оверлей, остаёмся в меню
   loginContainer.style.display = "none";
 });
-
 function showLoginOverlay() {
   walletInput.value = "";
   loginContainer.style.display = "block";
@@ -111,7 +107,6 @@ function showLoginOverlay() {
 closeRecordsButton.addEventListener("click", () => {
   recordsContainer.style.display = "none";
 });
-
 async function showRecordsOverlay() {
   recordsContainer.style.display = "block";
   recordsTableContainer.innerHTML = "Loading...";
@@ -134,11 +129,10 @@ btnMenuOver.addEventListener("click", () => {
   updateUI();
 });
 btnRestartOver.addEventListener("click", () => {
-  // Снова покажем оверлей для ввода кошелька
   showLoginOverlay();
 });
 
-// ---------- CANVAS RESIZE ----------
+// ---------- RESIZE CANVAS ----------
 function resizeCanvas() {
   gameCanvas.width = window.innerWidth;
   gameCanvas.height = window.innerHeight;
@@ -146,7 +140,7 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// ---------- CAMERA DRAGGING (RIGHT MOUSE BUTTON) ----------
+// ---------- CAMERA DRAG (RIGHT BUTTON) ----------
 gameCanvas.addEventListener("mousedown", (e) => {
   if (e.button === 2) {
     isDragging = true;
@@ -169,35 +163,33 @@ gameCanvas.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
 
-// ---------- CANVAS CLICK (Collect digits) ----------
+// ---------- CLICK TO COLLECT DIGITS ----------
 gameCanvas.addEventListener("click", (e) => {
   if (gameState !== "game") return;
   const rect = gameCanvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
-
   const clickedKey = getClickedDigit(mouseX, mouseY, cameraX, cameraY);
   if (!clickedKey) return;
 
-  const parts = clickedKey.split("_").map(Number);
-  const gx = parts[0], gy = parts[1];
+  const [gx, gy] = clickedKey.split("_").map(Number);
   const digit = cells[clickedKey];
   const anomaly = digit.anomaly;
   const currentTime = performance.now();
 
-  // Собираем группу по аномалии
+  // Аномалия
   if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
     const group = bfsCollectAnomaly(gx, gy, anomaly);
     if (group.length >= 5) {
       const idx = (anomaly === Digit.ANOMALY_UPSIDE) ? 0 : 1;
       const fx = gameCanvas.width / 4 + (idx * gameCanvas.width / 2);
       const fy = gameCanvas.height - FOLDER_HEIGHT / 2;
-      for (let key of group) {
-        const d = cells[key];
+      for (let k of group) {
+        const d = cells[k];
         const pos = d.screenPosition(cameraX, cameraY, currentTime);
         flyingDigits.push(new FlyingDigit(d, pos.x, pos.y, fx, fy, currentTime, 1000));
-        delete cells[key];
-        slotsToRespawn[key] = currentTime + 2000;
+        delete cells[k];
+        slotsToRespawn[k] = currentTime + 2000;
       }
       scoreTotal += group.length * 10;
       folderScores[idx] += group.length;
@@ -208,17 +200,17 @@ gameCanvas.addEventListener("click", (e) => {
     }
   }
 
-  // Собираем группу по значению
+  // Одинаковые по значению
   const groupVal = bfsCollectValue(gx, gy);
   if (groupVal.length >= 5) {
     const fx = gameCanvas.width / 4;
     const fy = gameCanvas.height - FOLDER_HEIGHT / 2;
-    for (let key of groupVal) {
-      const d = cells[key];
+    for (let k of groupVal) {
+      const d = cells[k];
       const pos = d.screenPosition(cameraX, cameraY, currentTime);
       flyingDigits.push(new FlyingDigit(d, pos.x, pos.y, fx, fy, currentTime, 1000));
-      delete cells[key];
-      slotsToRespawn[key] = currentTime + 2000;
+      delete cells[k];
+      slotsToRespawn[k] = currentTime + 2000;
     }
     scoreTotal += groupVal.length * 10;
     folderScores[0] += groupVal.length;
@@ -228,9 +220,9 @@ gameCanvas.addEventListener("click", (e) => {
   }
 });
 
-// ---------- GAME LOOP (update + draw) ----------
+// ---------- UPDATE GAME ----------
 function updateGame(dt) {
-  const currentTime = performance.now();
+  const now = performance.now();
   timeLeft -= dt / 1000;
   if (timeLeft <= 0) {
     gameState = "game_over";
@@ -243,16 +235,16 @@ function updateGame(dt) {
     return;
   }
   ensureVisibleChunks(cameraX, cameraY, gameCanvas.width, gameCanvas.height);
+  flyingDigits = flyingDigits.filter(fd => (now - fd.startTime) < fd.duration);
 
-  flyingDigits = flyingDigits.filter(fd => (currentTime - fd.startTime) < fd.duration);
-
-  for (let key in slotsToRespawn) {
-    if (currentTime >= slotsToRespawn[key]) {
-      const [gx, gy] = key.split("_").map(Number);
+  // Возвращаем удалённые клетки через 2 секунды
+  for (let k in slotsToRespawn) {
+    if (now >= slotsToRespawn[k]) {
+      const [gx, gy] = k.split("_").map(Number);
       const val = Math.floor(Math.random() * 10);
-      const d = new Digit(gx, gy, val, Digit.ANOMALY_NONE, currentTime - Math.random() * 1000);
-      cells[key] = d;
-      delete slotsToRespawn[key];
+      const d = new Digit(gx, gy, val, Digit.ANOMALY_NONE, now - Math.random() * 1000);
+      cells[k] = d;
+      delete slotsToRespawn[k];
     }
   }
 }
@@ -260,15 +252,15 @@ function updateGame(dt) {
 function drawGame() {
   ctx.fillStyle = "#021013";
   ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
-  const currentTime = performance.now();
+  const now = performance.now();
 
   drawCells(ctx, cameraX, cameraY, gameCanvas.width, gameCanvas.height);
 
   for (let fd of flyingDigits) {
-    fd.draw(ctx, currentTime);
+    fd.draw(ctx, now);
   }
 
-  // Папки (Upside, Strange) внизу
+  // Папки снизу (Upside, Strange)
   for (let i = 0; i < 2; i++) {
     const rectX = i * gameCanvas.width / 2;
     const rectY = gameCanvas.height - FOLDER_HEIGHT;
@@ -283,7 +275,7 @@ function drawGame() {
     ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + gameCanvas.width / 4, rectY + FOLDER_HEIGHT / 2);
   }
 
-  // Счёт
+  // Score
   ctx.save();
   ctx.font = "24px Arial";
   const scoreText = `Score: ${scoreTotal}`;
@@ -295,7 +287,7 @@ function drawGame() {
   ctx.fillText(scoreText, 15, 32);
   ctx.restore();
 
-  // Таймер
+  // Timer
   ctx.save();
   ctx.font = "24px Arial";
   const timerText = `${Math.floor(timeLeft)} s.`;
@@ -312,7 +304,7 @@ function drawGame() {
   // Анимации +N s
   for (const k in timeAnimations) {
     const anim = timeAnimations[k];
-    const keep = anim.draw(ctx, currentTime);
+    const keep = anim.draw(ctx, now);
     if (!keep) delete timeAnimations[k];
   }
 }
@@ -332,8 +324,8 @@ requestAnimationFrame(gameLoop);
 
 // ---------- START GAME ----------
 function startGame() {
-  // Сброс
-  for (const key in cells) delete cells[key];
+  // Reset
+  for (const k in cells) delete cells[k];
   generatedChunks.clear();
   folderScores[0] = 0;
   folderScores[1] = 0;
@@ -359,21 +351,25 @@ function startGame() {
 function updateUI() {
   if (gameState === "menu") {
     menuContainer.style.display = "flex";
-    gameCanvas.style.display = "none";
+    gameCanvas.style.display    = "none";
     gameOverOverlay.style.display = "none";
     recordsContainer.style.display = "none";
-    loginContainer.style.display = "none"; // обязательно прячем, если вдруг
+    loginContainer.style.display   = "none";
+
+    // ВАЖНО: Не трогаем #topNav, пусть останется всегда visible
+
   } else if (gameState === "game") {
-    menuContainer.style.display = "none";
-    gameCanvas.style.display = "block";
+    menuContainer.style.display   = "none";
+    gameCanvas.style.display      = "block";
     gameOverOverlay.style.display = "none";
-    recordsContainer.style.display = "none";
-    loginContainer.style.display = "none";
+    recordsContainer.style.display= "none";
+    loginContainer.style.display  = "none";
+
   } else if (gameState === "game_over") {
-    menuContainer.style.display = "none";
-    gameCanvas.style.display = "block";
-    recordsContainer.style.display = "none";
-    loginContainer.style.display = "none";
+    menuContainer.style.display   = "none";
+    gameCanvas.style.display      = "block";
+    recordsContainer.style.display= "none";
+    loginContainer.style.display  = "none";
     finalScore.textContent = `Your score: ${lastScore}`;
     gameOverOverlay.style.display = "block";
   }
