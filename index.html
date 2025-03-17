@@ -7,20 +7,57 @@
     html, body {
       margin: 0;
       padding: 0;
-      width: 100vw;
-      height: 100vh;
+      min-width: 320px;
+      min-height: 400px;
       background: #021013;
       font-family: Arial, sans-serif;
-      /* Убираем overflow:hidden, чтобы при маленьких экранах скролл был доступен */
-      /* overflow: hidden; */ 
+      /* Дадим возможность прокрутки, если контента много */
+      overflow-x: hidden;
+      overflow-y: auto; 
     }
 
-    /* Fullscreen button */
+    /* ===== ШАПКА С ТРЕМЯ КНОПКАМИ (FIXED) ===== */
+    #topNav {
+      position: fixed; 
+      top: 0; 
+      left: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      background: #021013;
+      padding: 15px 0;
+      z-index: 100; /* чтобы шапка всегда сверху */
+    }
+    .navButton {
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background: #33484f;
+      color: #7AC0D6;
+    }
+    .navActive {
+      background: #7AC0D6;
+      color: #021013;
+    }
+    .navDisabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .navDisabled:hover {
+      background: #33484f; 
+    }
+
+    /* ===== FULLSCREEN BUTTON (в правом верхнем углу) ===== */
     #fullscreenButton {
-      position: absolute;
+      position: fixed;
       top: 10px;
       right: 10px;
-      z-index: 100;
+      z-index: 110; 
       padding: 10px 15px;
       background: #7AC0D6;
       border: none;
@@ -32,83 +69,57 @@
       color: #021013;
     }
 
-    /* ===== Шапка (topNav) с тремя кнопками */
-    #topNav {
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: center;
-      gap: 30px;
-      background: #021013;
-      padding: 15px 0;
-      box-sizing: border-box;
-      /* z-index: 50; */
-      /* По умолчанию снизу нет fixed, значит будет прокручиваться вместе со страницей */
-    }
-    .navButton {
-      padding: 10px 20px;
-      font-size: 18px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      background: #33484f; /* тёмный серо-синий */
-      color: #7AC0D6;
-    }
-    .navButton.navActive {
-      background: #7AC0D6;
-      color: #021013;
-    }
-    .navButton.navDisabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-    .navButton.navDisabled:hover {
-      background: #33484f; 
-    }
-
-    /* ===== Основное меню под шапкой ===== */
+    /* ===== МЕНЮ (под шапкой) ===== */
     #menuContainer {
-      display: none; /* Показываем при gameState="menu" */
-      background: #021013;
+      /* отступ сверху, чтобы не налезать на фиксированную шапку */
+      margin-top: 80px; 
+      /* остальное контент */
+      display: none;  /* показываем при gameState="menu" */
       color: #7AC0D6;
-      /* Задаём отступ сверху, чтобы не налезать на #topNav */
-      padding-top: 30px; 
+      padding: 20px;
       box-sizing: border-box;
     }
 
-    /* topSection, centerSection, bottomSection идут друг под другом */
-    #topSection {
-      text-align: center;
-      padding: 20px 0;
-    }
-    #topSection h1 {
-      font-size: 56px;
-      margin: 0;
-    }
-    #topSection p {
-      margin: 5px 0 0 0;
-      font-size: 22px;
-    }
-
-    #centerSection {
+    /* Строка 1: Левая колонка (title+buttons), Правая колонка (Objective...) */
+    #menuRow1 {
       display: flex;
       flex-direction: row;
       align-items: flex-start; 
-      justify-content: center;
-      gap: 50px; 
-      padding: 20px 0;
-      box-sizing: border-box;
+      justify-content: space-around;
+      flex-wrap: wrap; /* чтобы на узких экранах переносилось */
+      gap: 40px;
+      margin-bottom: 30px; 
     }
-    #centerLeft {
+
+    /* Левая колонка: big title + subtitle + 3 menu buttons */
+    #leftCol {
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      align-items: center;
+      align-items: flex-start;
+      min-width: 280px;
+      max-width: 400px;
+      gap: 15px;
+    }
+    /* Заголовок + sub */
+    #gameTitle {
+      font-size: 56px;
+      margin: 0;
+    }
+    #gameSubtitle {
+      margin: 5px 0 0 0;
+      font-size: 22px;
+      color: #7AC0D6;
+    }
+    /* Кнопки Start/Records/Buy */
+    .menuButtonsContainer {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-top: 10px;
     }
     .menuButton {
       width: 220px;
-      padding: 18px;
+      padding: 15px;
       background: #7AC0D6;
       color: #021013;
       font-size: 20px;
@@ -128,28 +139,36 @@
       background: #9f2f2f !important;
     }
 
-    #centerRight {
-      width: 400px; /* жёсткая ширина, можно адаптировать */
-      font-size: 20px;
-      line-height: 1.4;
+    /* Правая колонка: Objective/Controls */
+    #rightCol {
+      display: flex;
+      flex-direction: column;
+      max-width: 500px;
     }
-    #centerRight h3 {
+    #rightCol h3 {
       margin-top: 0;
       margin-bottom: 10px;
       font-size: 24px;
+    }
+    #rightCol p {
+      margin-bottom: 15px;
+      font-size: 20px;
+      line-height: 1.4;
     }
     .highlight {
       color: #b33838;
       font-weight: bold;
     }
 
-    #bottomSection {
+    /* Строка 2: Примеры Upside-down / Strange digits */
+    #menuRow2 {
       display: flex;
       flex-direction: row;
       align-items: flex-start;
       justify-content: center;
       gap: 60px;
-      padding: 20px 0 50px 0; /* чуть больше снизу */
+      margin-bottom: 30px; 
+      flex-wrap: wrap;
     }
     .exampleBlock {
       text-align: center;
@@ -164,22 +183,22 @@
       max-width: 400px;
     }
 
-    /* CANVAS (game) */
+    /* CANVAS */
     #gameCanvas {
       display: none; 
-      background: #021013;
-      width: 100vw;
-      height: 100vh;
       position: absolute;
       top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #021013;
       z-index: 0;
     }
 
-    /* LOGIN overlay */
+    /* LOGIN OVERLAY */
     #loginContainer {
       position: absolute;
       top: 0; left: 0;
-      width: 100%;
+      width: 100%; 
       height: 100%;
       display: none;
       z-index: 101;
@@ -197,12 +216,13 @@
       color: #7AC0D6;
     }
 
-    /* GAME OVER overlay */
+    /* GAME OVER */
     #gameOverOverlay {
       display: none;
       position: absolute;
       top: 0; left: 0;
-      width: 100%; height: 100%;
+      width: 100%; 
+      height: 100%;
       background: rgba(0,0,0,0.75);
       color: #7AC0D6;
       z-index: 999;
@@ -270,15 +290,15 @@
   </style>
 </head>
 <body>
-  <!-- FULLSCREEN BUTTON -->
-  <button id="fullscreenButton">Fullscreen</button>
-
-  <!-- TOP NAV (3 games) -->
+  <!-- ФИКСИРОВАННАЯ ШАПКА С ТРЕМЯ КНОПКАМИ -->
   <div id="topNav">
     <button class="navButton navActive">ANOMALIES</button>
     <button class="navButton navDisabled">STRAY (SOON)</button>
     <button class="navButton navDisabled">ARCANUM (SOON)</button>
   </div>
+
+  <!-- FULLSCREEN BUTTON (FIXED) -->
+  <button id="fullscreenButton">Fullscreen</button>
 
   <!-- LOGIN OVERLAY -->
   <div id="loginContainer">
@@ -290,24 +310,25 @@
     </div>
   </div>
 
-  <!-- MENU CONTAINER -->
+  <!-- MENU (под шапкой) -->
   <div id="menuContainer">
-    <!-- topSection -->
-    <div id="topSection">
-      <h1>ANOMALIES GAME</h1>
-      <p>Collect as many unusual digits as you can in 60 seconds!</p>
-    </div>
-
-    <!-- centerSection (buttons + text) -->
-    <div id="centerSection">
-      <div id="centerLeft">
-        <button id="btnStart"   class="menuButton">Start Game</button>
-        <button id="btnRecords" class="menuButton">Records</button>
-        <button id="btnBuy"     class="menuButton buyButton">BUY TOKEN</button>
+    <!-- Первая строка: левая колонка (title + sub + 3btn), правая колонка (Objective/Controls) -->
+    <div id="menuRow1">
+      <div id="leftCol">
+        <h1 id="gameTitle">ANOMALIES GAME</h1>
+        <p id="gameSubtitle">Collect as many unusual digits as you can in 60 seconds!</p>
+        <div class="menuButtonsContainer">
+          <button id="btnStart"   class="menuButton">Start Game</button>
+          <button id="btnRecords" class="menuButton">Records</button>
+          <button id="btnBuy"     class="menuButton buyButton">BUY TOKEN</button>
+        </div>
       </div>
-      <div id="centerRight">
+      <div id="rightCol">
         <h3>Objective</h3>
-        <p>In 60 seconds, find as many upside-down and strange digits as possible. Each one you collect increases your score.</p>
+        <p>
+          In 60 seconds, find as many upside-down and strange digits as possible. 
+          Each one you collect increases your score.
+        </p>
 
         <h3>Controls</h3>
         <p>
@@ -317,8 +338,8 @@
       </div>
     </div>
 
-    <!-- bottomSection (two images) -->
-    <div id="bottomSection">
+    <!-- Вторая строка: примеры Upside/Strange digits -->
+    <div id="menuRow2">
       <div class="exampleBlock">
         <h3>Upside-down digits</h3>
         <img src="1.jpg" alt="Upside-down digits" />
@@ -330,10 +351,10 @@
     </div>
   </div>
 
-  <!-- GAME CANVAS -->
+  <!-- CANVAS (игра) -->
   <canvas id="gameCanvas"></canvas>
 
-  <!-- GAME OVER OVERLAY -->
+  <!-- GAME OVER -->
   <div id="gameOverOverlay">
     <div id="gameOverContent">
       <h1>Time's up!</h1>
@@ -352,7 +373,7 @@
     </div>
   </div>
 
-  <!-- Main Script -->
+  <!-- MAIN SCRIPT -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
