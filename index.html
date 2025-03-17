@@ -90,13 +90,14 @@
 
     /* Верхняя часть ( ~15% ) */
     #topSection {
-      flex: 0 0 30%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
+  flex: 0 0 auto;         /* вместо 30% */
+  padding-bottom: 10px;   /* регулировать отступ снизу */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
     #topSection h1 {
       font-size: 56px; 
       margin: 0;
