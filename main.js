@@ -8,31 +8,36 @@ import {
   bfsCollectValue, bfsCollectAnomaly, getClickedDigit
 } from "./game.js";
 
-// Если в ui.js есть функции для рекордов – используйте их. Здесь же для наглядности:
+// Для примера, если нет отдельного ui.js
 import { fetchAllParticipantsFromXano } from "./api.js";
 
 // ---------- HTML ELEMENTS ----------
-const fullscreenButton = document.getElementById("fullscreenButton");
+const fullscreenButton   = document.getElementById("fullscreenButton");
 
-const menuContainer  = document.getElementById("menuContainer");
-const btnStart       = document.getElementById("btnStart");
-const btnRecords     = document.getElementById("btnRecords");
-const btnBuy         = document.getElementById("btnBuy");
+const loginContainer     = document.getElementById("loginContainer");
+const walletInput        = document.getElementById("walletInput");
+const loginOkButton      = document.getElementById("loginOkButton");
+const loginCancelButton  = document.getElementById("loginCancelButton");
 
-const gameCanvas     = document.getElementById("gameCanvas");
-const ctx            = gameCanvas.getContext("2d");
+const menuContainer      = document.getElementById("menuContainer");
+const btnStart           = document.getElementById("btnStart");
+const btnRecords         = document.getElementById("btnRecords");
+const btnBuy             = document.getElementById("btnBuy");
 
-const gameOverOverlay= document.getElementById("gameOverOverlay");
-const finalScore     = document.getElementById("finalScore");
-const btnMenuOver    = document.getElementById("btnMenu");
-const btnRestartOver = document.getElementById("btnRestart");
+const gameCanvas         = document.getElementById("gameCanvas");
+const ctx                = gameCanvas.getContext("2d");
+
+const gameOverOverlay    = document.getElementById("gameOverOverlay");
+const finalScore         = document.getElementById("finalScore");
+const btnMenuOver        = document.getElementById("btnMenu");
+const btnRestartOver     = document.getElementById("btnRestart");
 
 const recordsContainer      = document.getElementById("recordsContainer");
 const recordsTableContainer = document.getElementById("recordsTableContainer");
 const closeRecordsButton    = document.getElementById("closeRecordsButton");
 
 // ---------- GAME STATE ----------
-let gameState  = "menu";  // "menu", "game", "game_over"
+let gameState  = "menu"; // "menu", "game", "game_over"
 let currentPlayer = null; // { wallet, score }
 
 const START_TIME    = 60;
@@ -62,20 +67,8 @@ fullscreenButton.addEventListener("click", () => {
 
 // ---------- MENU BUTTONS ----------
 btnStart.addEventListener("click", () => {
-  // Спросим у пользователя кошелёк (prompt)
-  let wallet = prompt("Enter your BTC Taproot wallet (62 chars):");
-  if (!wallet) {
-    alert("Wallet is required to start the game!");
-    return;
-  }
-  wallet = wallet.trim().toLowerCase();
-  // Можно добавить валидацию по длине
-  if (wallet.length !== 62) {
-    alert("Invalid wallet length! Must be 62 chars.");
-    return;
-  }
-  currentPlayer = { wallet, score: 0 };
-  startGame();
+  // Показываем оверлей ввода кошелька
+  showLoginOverlay();
 });
 
 btnRecords.addEventListener("click", () => {
@@ -83,9 +76,36 @@ btnRecords.addEventListener("click", () => {
 });
 
 btnBuy.addEventListener("click", () => {
-  // Здесь ваша логика покупки токена
   alert("Here you can implement your token purchase logic.");
 });
+
+// ---------- LOGIN OVERLAY ----------
+loginOkButton.addEventListener("click", () => {
+  const wallet = walletInput.value.trim().toLowerCase();
+  // Проверка
+  if (!wallet) {
+    alert("Wallet is required!");
+    return;
+  }
+  if (wallet.length !== 62) {
+    alert("Invalid wallet length! Must be 62 characters.");
+    return;
+  }
+  currentPlayer = { wallet, score: 0 };
+  loginContainer.style.display = "none";
+  startGame();
+});
+
+loginCancelButton.addEventListener("click", () => {
+  // Прячем оверлей, остаёмся в меню
+  loginContainer.style.display = "none";
+});
+
+function showLoginOverlay() {
+  walletInput.value = "";
+  loginContainer.style.display = "block";
+  walletInput.focus();
+}
 
 // ---------- RECORDS OVERLAY ----------
 closeRecordsButton.addEventListener("click", () => {
@@ -114,20 +134,8 @@ btnMenuOver.addEventListener("click", () => {
   updateUI();
 });
 btnRestartOver.addEventListener("click", () => {
-  // Перезапустить игру, спросив кошелёк заново
-  let wallet = prompt("Enter your BTC Taproot wallet (62 chars):");
-  if (!wallet) {
-    alert("Wallet is required!");
-    // Не перезапускаем без кошелька
-    return;
-  }
-  wallet = wallet.trim().toLowerCase();
-  if (wallet.length !== 62) {
-    alert("Invalid wallet length! Must be 62 chars.");
-    return;
-  }
-  currentPlayer = { wallet, score: 0 };
-  startGame();
+  // Снова покажем оверлей для ввода кошелька
+  showLoginOverlay();
 });
 
 // ---------- CANVAS RESIZE ----------
@@ -354,15 +362,18 @@ function updateUI() {
     gameCanvas.style.display = "none";
     gameOverOverlay.style.display = "none";
     recordsContainer.style.display = "none";
+    loginContainer.style.display = "none"; // обязательно прячем, если вдруг
   } else if (gameState === "game") {
     menuContainer.style.display = "none";
     gameCanvas.style.display = "block";
     gameOverOverlay.style.display = "none";
     recordsContainer.style.display = "none";
+    loginContainer.style.display = "none";
   } else if (gameState === "game_over") {
     menuContainer.style.display = "none";
     gameCanvas.style.display = "block";
     recordsContainer.style.display = "none";
+    loginContainer.style.display = "none";
     finalScore.textContent = `Your score: ${lastScore}`;
     gameOverOverlay.style.display = "block";
   }
