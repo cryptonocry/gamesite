@@ -4,16 +4,12 @@
   <meta charset="UTF-8">
   <title>Anomalies Game</title>
   <style>
-    /* ===== Основные стили ===== */
-
-    /* Здесь главное изменение: min-width:1200px, чтобы не сжималось */
     html, body {
       margin: 0;
       padding: 0;
-      width: 100%;
-      height: 100%;
-      min-width: 1200px; /* ← Добавлено. Минимум 1200px */
-      overflow: auto; /* Разрешаем скроллы при узких экранах */
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
       background: #021013;
       font-family: Arial, sans-serif;
     }
@@ -35,12 +31,12 @@
       color: #021013;
     }
 
-    /* TOP NAV BAR (ANOMALIES, STRAY, ARCANUM) */
+    /* TOP NAV BAR */
     #topNav {
       position: absolute; 
       top: 0; left: 0;
       width: 100%;
-      z-index: 200; 
+      z-index: 200;
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -66,15 +62,13 @@
       opacity: 0.5;
       cursor: default;
     }
-    .navDisabled:hover {
-      background: #33484f; 
-    }
 
     /* LOGIN OVERLAY */
     #loginContainer {
       position: absolute;
       top: 0; left: 0;
-      width: 100%; height: 100%;
+      width: 100%; 
+      height: 100%;
       display: none;
       z-index: 101;
       background: rgba(0,0,0,0.8);
@@ -97,18 +91,18 @@
       top: 0; left: 0;
       width: 100%;
       height: 100%;
-      display: none;
+      display: none; /* отображаем только в menuState="menu" */
       flex-direction: column;
       background: #021013;
       color: #7AC0D6;
       z-index: 100;
-      margin-top: 80px; /* чтобы не перекрывало панель вверху */
+      margin-top: 80px; /* чтобы не перекрывалось панелью #topNav */
     }
 
-    /* ВЕРХНЯЯ ЧАСТЬ (ANOMALIES GAME, subtitle) */
+    /* ВЕРХНЯЯ ЧАСТЬ */
     #topSection {
       flex: 0 0 auto;         
-      padding: 30px 0 20px 0; 
+      padding: 30px 0 20px 0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -124,16 +118,14 @@
       font-size: 22px;
     }
 
-    /* СРЕДНЯЯ ЧАСТЬ (кнопки слева, Objective справа) */
+    /* СРЕДНЯЯ ЧАСТЬ */
     #centerSection {
       flex: 0 0 auto;
       display: flex;
-      align-items: center; 
-      justify-content: space-evenly; 
+      align-items: center;
+      justify-content: space-evenly;
       padding: 20px;
       box-sizing: border-box;
-      /* ВАЖНО: не используем flex-wrap, чтобы не ломать столбцы */
-      flex-wrap: nowrap; /* или просто не указываем wrap */
     }
     #centerLeft {
       display: flex;
@@ -181,7 +173,16 @@
       font-weight: bold;
     }
 
-    /* НИЖНЯЯ ЧАСТЬ (Upside-down / Strange) */
+    /* === Новые стили для дополнительного заголовка === */
+    #centerRight h4 {
+      margin-top: 20px;  /* небольшой отступ сверху */
+      margin-bottom: 10px;
+      font-size: 24px;
+      /* чуть светлее, чем #7AC0D6, например #ACE9F5 */
+      color: #ACE9F5;
+    }
+
+    /* НИЖНЯЯ ЧАСТЬ */
     #bottomSection {
       flex: 0 0 auto;
       display: flex;
@@ -190,10 +191,6 @@
       justify-content: center;
       gap: 30px;
       padding-bottom: 20px;
-      /* Если нужно отодвинуть чуть ниже, добавьте margin-top */
-      margin-top: 40px; /* <-- Добавим, чтобы еще ниже опустить */
-      /* Без flex-wrap, чтобы не перестраивалось */
-      flex-wrap: nowrap;
     }
     .exampleBlock {
       text-align: center;
@@ -208,14 +205,14 @@
       max-width: 400px; 
     }
 
-    /* CANVAS */
+    /* GAME CANVAS */
     #gameCanvas {
       position: absolute;
       top: 0; left: 0;
       width: 100vw;
       height: 100vh;
-      background: #021013;
       display: none; 
+      background: #021013;
     }
 
     /* GAME OVER OVERLAY */
@@ -233,6 +230,14 @@
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
+    }
+    #gameOverContent h1 {
+      font-size: 36px;
+      margin: 0 0 20px 0;
+    }
+    #gameOverContent p {
+      margin: 20px 0;
+      font-size: 24px;
     }
     .goButton {
       margin: 10px;
@@ -252,8 +257,7 @@
     #recordsContainer {
       position: absolute;
       top: 0; left: 0;
-      width: 100%; 
-      height: 100%;
+      width: 100%; height: 100%;
       background: rgba(0,0,0,0.9);
       display: none;
       z-index: 999;
@@ -294,7 +298,7 @@
   <!-- FULLSCREEN BUTTON -->
   <button id="fullscreenButton">Fullscreen</button>
 
-  <!-- TOP NAV (ANOMALIES / STRAY / ARCANUM) -->
+  <!-- TOP NAV (игры) -->
   <div id="topNav">
     <button class="navButton navActive">ANOMALIES</button>
     <button class="navButton navDisabled">STRAY (SOON)</button>
@@ -313,23 +317,31 @@
 
   <!-- MENU -->
   <div id="menuContainer">
+    <!-- ВЕРХНЯЯ ЧАСТЬ -->
     <div id="topSection">
       <h1>ANOMALIES GAME</h1>
       <p>Collect as many unusual digits as you can in 60 seconds!</p>
     </div>
 
+    <!-- СРЕДНЯЯ ЧАСТЬ -->
     <div id="centerSection">
+      <!-- Левая колонка -->
       <div id="centerLeft">
         <button id="btnStart"   class="menuButton">Start Game</button>
         <button id="btnRecords" class="menuButton">Records</button>
         <button id="btnBuy"     class="menuButton buyButton">BUY TOKEN</button>
       </div>
+
+      <!-- Правая колонка: Objective, НОВЫЙ БЛОК, Controls -->
       <div id="centerRight">
         <h3>Objective</h3>
-        <p>
-          In 60 seconds, find as many upside-down and strange digits as possible. 
-          Each one you collect increases your score.
-        </p>
+        <p>In 60 seconds, find as many upside-down and strange digits as possible. Each one you collect increases your score.</p>
+
+        <!-- НОВЫЙ АБЗАЦ -->
+        <h4>The Hunt for Something Greater</h4>
+        <p>The anomalies are not just numbers... They are keys to something bigger. 
+           Top hunters will get something you won’t want to fade!</p>
+
         <h3>Controls</h3>
         <p>
           <span class="highlight">Right-click + drag</span>: move the camera.<br/>
@@ -338,6 +350,7 @@
       </div>
     </div>
 
+    <!-- НИЖНЯЯ ЧАСТЬ (примеры цифр) -->
     <div id="bottomSection">
       <div class="exampleBlock">
         <h3>Upside-down digits</h3>
@@ -350,7 +363,7 @@
     </div>
   </div>
 
-  <!-- GAME CANVAS -->
+  <!-- CANVAS (игра) -->
   <canvas id="gameCanvas"></canvas>
 
   <!-- GAME OVER OVERLAY -->
