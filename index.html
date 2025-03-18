@@ -31,12 +31,12 @@
       color: #021013;
     }
 
-    /* TOP NAV BAR */
+    /* TOP NAV BAR (ANOMALIES, STRAY, ARCANUM, X TWITTER) */
     #topNav {
       position: absolute; 
       top: 0; left: 0;
       width: 100%;
-      z-index: 200;
+      z-index: 200; 
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -61,6 +61,9 @@
     .navDisabled {
       opacity: 0.5;
       cursor: default;
+    }
+    .navDisabled:hover {
+      background: #33484f; 
     }
 
     /* LOGIN OVERLAY */
@@ -91,18 +94,18 @@
       top: 0; left: 0;
       width: 100%;
       height: 100%;
-      display: none; /* отображаем только в menuState="menu" */
+      display: none; /* показывается при gameState="menu" */
       flex-direction: column;
       background: #021013;
       color: #7AC0D6;
       z-index: 100;
-      margin-top: 80px; /* чтобы не перекрывалось панелью #topNav */
+      margin-top: 80px; /* чтобы панель вверху не перекрывала заголовок */
     }
 
-    /* ВЕРХНЯЯ ЧАСТЬ */
+    /* ВЕРХНЯЯ ЧАСТЬ (ANOMALIES GAME) */
     #topSection {
       flex: 0 0 auto;         
-      padding: 30px 0 20px 0;
+      padding: 30px 0 20px 0; 
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -118,12 +121,12 @@
       font-size: 22px;
     }
 
-    /* СРЕДНЯЯ ЧАСТЬ */
+    /* СРЕДНЯЯ ЧАСТЬ (кнопки слева, Objective/Controls/Hunt справа) */
     #centerSection {
-      flex: 0 0 auto;
+      flex: 0 0 auto;         
       display: flex;
-      align-items: center;
-      justify-content: space-evenly;
+      align-items: center; 
+      justify-content: space-evenly; 
       padding: 20px;
       box-sizing: border-box;
     }
@@ -173,16 +176,15 @@
       font-weight: bold;
     }
 
-    /* === Новые стили для дополнительного заголовка === */
+    /* Заголовок Hunt (чуть светлее) */
     #centerRight h4 {
-      margin-top: 20px;  /* небольшой отступ сверху */
+      margin-top: 20px;
       margin-bottom: 10px;
       font-size: 24px;
-      /* чуть светлее, чем #7AC0D6, например #ACE9F5 */
-      color: #ACE9F5;
+      color: #ACE9F5; /* светлее, чем #7AC0D6 */
     }
 
-    /* НИЖНЯЯ ЧАСТЬ */
+    /* НИЖНЯЯ ЧАСТЬ (примеры) */
     #bottomSection {
       flex: 0 0 auto;
       display: flex;
@@ -190,7 +192,7 @@
       align-items: center;
       justify-content: center;
       gap: 30px;
-      padding-bottom: 20px;
+      padding-bottom: 20px; 
     }
     .exampleBlock {
       text-align: center;
@@ -205,7 +207,7 @@
       max-width: 400px; 
     }
 
-    /* GAME CANVAS */
+    /* CANVAS (игра) */
     #gameCanvas {
       position: absolute;
       top: 0; left: 0;
@@ -220,8 +222,7 @@
       display: none;
       position: absolute;
       top: 0; left: 0;
-      width: 100%; 
-      height: 100%;
+      width: 100%; height: 100%;
       background: rgba(0,0,0,0.75);
       color: #7AC0D6;
     }
@@ -298,11 +299,13 @@
   <!-- FULLSCREEN BUTTON -->
   <button id="fullscreenButton">Fullscreen</button>
 
-  <!-- TOP NAV (игры) -->
+  <!-- TOP NAV BAR -->
   <div id="topNav">
     <button class="navButton navActive">ANOMALIES</button>
     <button class="navButton navDisabled">STRAY (SOON)</button>
     <button class="navButton navDisabled">ARCANUM (SOON)</button>
+    <!-- НОВАЯ КНОПКА X (TWITTER) -->
+    <button class="navButton" id="btnTwitter">X (TWITTER)</button>
   </div>
 
   <!-- LOGIN OVERLAY -->
@@ -317,40 +320,37 @@
 
   <!-- MENU -->
   <div id="menuContainer">
-    <!-- ВЕРХНЯЯ ЧАСТЬ -->
     <div id="topSection">
       <h1>ANOMALIES GAME</h1>
       <p>Collect as many unusual digits as you can in 60 seconds!</p>
     </div>
 
-    <!-- СРЕДНЯЯ ЧАСТЬ -->
     <div id="centerSection">
-      <!-- Левая колонка -->
       <div id="centerLeft">
         <button id="btnStart"   class="menuButton">Start Game</button>
         <button id="btnRecords" class="menuButton">Records</button>
         <button id="btnBuy"     class="menuButton buyButton">BUY TOKEN</button>
       </div>
-
-      <!-- Правая колонка: Objective, НОВЫЙ БЛОК, Controls -->
       <div id="centerRight">
         <h3>Objective</h3>
-        <p>In 60 seconds, find as many upside-down and strange digits as possible. Each one you collect increases your score.</p>
+        <p>
+          In 60 seconds, find as many upside-down and strange digits as possible. 
+          Each one you collect increases your score.
+        </p>
 
-        <!-- НОВЫЙ АБЗАЦ -->
-        <h4>The Hunt for Something Greater</h4>
-        <p>The anomalies are not just numbers... They are keys to something bigger. 
-           Top hunters will get something you won’t want to fade!</p>
-
+        <!-- Поменяли местами: теперь сначала Controls, потом Hunt -->
         <h3>Controls</h3>
         <p>
           <span class="highlight">Right-click + drag</span>: move the camera.<br/>
           <span class="highlight">Left-click</span>: collect any abnormal digit.
         </p>
+
+        <h4>The Hunt for Something Greater</h4>
+        <p>The anomalies are not just numbers... They are keys to something bigger. 
+           Top hunters will get something you won’t want to fade!</p>
       </div>
     </div>
 
-    <!-- НИЖНЯЯ ЧАСТЬ (примеры цифр) -->
     <div id="bottomSection">
       <div class="exampleBlock">
         <h3>Upside-down digits</h3>
@@ -363,10 +363,8 @@
     </div>
   </div>
 
-  <!-- CANVAS (игра) -->
   <canvas id="gameCanvas"></canvas>
 
-  <!-- GAME OVER OVERLAY -->
   <div id="gameOverOverlay">
     <div id="gameOverContent">
       <h1>Time's up!</h1>
@@ -376,7 +374,6 @@
     </div>
   </div>
 
-  <!-- RECORDS OVERLAY -->
   <div id="recordsContainer">
     <div id="recordsContent">
       <h2>Ranking</h2>
@@ -385,7 +382,7 @@
     </div>
   </div>
 
-  <!-- main.js -->
+  <!-- Main script -->
   <script type="module" src="main.js"></script>
 </body>
 </html>
