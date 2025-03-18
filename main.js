@@ -77,6 +77,11 @@ btnRecords.addEventListener("click", () => {
 btnBuy.addEventListener("click", () => {
   alert("Here you can implement your token purchase logic.");
 });
+// <-- NEW:
+const btnTwitter = document.getElementById("btnTwitter");
+btnTwitter.addEventListener("click", () => {
+  window.open("https://x.com/ANOMALIESGAME", "_blank");
+});
 
 // ---------- LOGIN OVERLAY ----------
 loginOkButton.addEventListener("click", () => {
