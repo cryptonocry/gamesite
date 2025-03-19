@@ -25,7 +25,7 @@ function playStartSound() {
 
 function playEndSound() {
   const s = new Audio("end.wav");
-  s.volume = 0.7;
+  s.volume = 0.5;
   s.play();
 }
 
