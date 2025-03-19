@@ -8,6 +8,7 @@ import {
   bfsCollectValue, bfsCollectAnomaly, getClickedDigit
 } from "./game.js";
 import { fetchAllParticipantsFromXano } from "./api.js";
+import { showRecordsOverlay } from "./ui.js";
 
 // ---------------------------------------------------
 // ФУНКЦИИ ДЛЯ ЗВУКОВ (пример, если у вас есть plus.wav / move.wav)
