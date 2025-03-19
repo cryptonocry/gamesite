@@ -31,12 +31,25 @@
       color: #021013;
     }
 
-    /* TOP NAV BAR */
-    #topNav {
-      position: absolute; 
-      top: 0; left: 0;
+    /* 
+       ВЕСЬ МЕНЮ-КОНТЕЙНЕР (включая «верхние кнопки» Anomalies / Stray / Arcanum, 
+       и также Start/Records/Buy, и картинки снизу) 
+    */
+    #menuContainer {
+      position: absolute;
+      top: 0; 
+      left: 0;
       width: 100%;
-      z-index: 200; 
+      height: 100%;
+      display: none; /* показываем когда gameState="menu" */
+      flex-direction: column;
+      background: #021013;
+      color: #7AC0D6;
+      z-index: 100; 
+    }
+
+    /* ВЕРХНЯЯ ПАНЕЛЬ (Anomalies / Stray / Arcanum / Twitter) */
+    #menuTopRow {
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -66,42 +79,6 @@
       background: #33484f; 
     }
 
-    /* LOGIN OVERLAY (Enter wallet) */
-    #loginContainer {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; 
-      height: 100%;
-      display: none;
-      z-index: 101;
-      background: rgba(0,0,0,0.8);
-    }
-    #loginContent {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: #021013;
-      padding: 20px;
-      border-radius: 10px;
-      width: 300px;
-      text-align: center;
-      color: #7AC0D6;
-    }
-
-    /* MENU CONTAINER */
-    #menuContainer {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      display: none; /* показывается, когда gameState="menu" */
-      flex-direction: column;
-      background: #021013;
-      color: #7AC0D6;
-      z-index: 100;
-      margin-top: 80px; /* Чтобы не пересекаться с topNav */
-    }
-
     /* ВЕРХНЯЯ ЧАСТЬ (ANOMALIES GAME) */
     #topSection {
       flex: 0 0 auto;         
@@ -121,7 +98,7 @@
       font-size: 22px;
     }
 
-    /* СРЕДНЯЯ ЧАСТЬ (кнопки слева, текст справа) */
+    /* СРЕДНЯЯ ЧАСТЬ (кнопки слева + текст справа) */
     #centerSection {
       flex: 0 0 auto;         
       display: flex;
@@ -178,7 +155,7 @@
       font-weight: bold;
     }
 
-    /* НИЖНЯЯ ЧАСТЬ (примеры) */
+    /* НИЖНЯЯ ЧАСТЬ (примеры цифр) */
     #bottomSection {
       flex: 0 0 auto;
       display: flex;
@@ -206,7 +183,8 @@
     /* CANVAS (игра) */
     #gameCanvas {
       position: absolute;
-      top: 0; left: 0;
+      top: 0; 
+      left: 0;
       width: 100vw;
       height: 100vh;
       display: none; 
@@ -217,14 +195,17 @@
     #gameOverOverlay {
       display: none;
       position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      top: 0; 
+      left: 0;
+      width: 100%; 
+      height: 100%;
       background: rgba(0,0,0,0.75);
       color: #7AC0D6;
     }
     #gameOverContent {
       position: absolute;
-      top: 50%; left: 50%;
+      top: 50%; 
+      left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
     }
@@ -253,7 +234,8 @@
     /* RECORDS OVERLAY */
     #recordsContainer {
       position: absolute;
-      top: 0; left: 0;
+      top: 0; 
+      left: 0;
       width: 100%; 
       height: 100%;
       background: rgba(0,0,0,0.9);
@@ -293,34 +275,26 @@
   </style>
 </head>
 <body>
-  <!-- FULLSCREEN BUTTON -->
+  <!-- FULLSCREEN BUTTON (отдельно, всегда видна) -->
   <button id="fullscreenButton">Fullscreen</button>
 
-  <!-- TOP NAV BAR -->
-  <div id="topNav">
-    <button class="navButton navActive">ANOMALIES</button>
-    <button class="navButton navDisabled">STRAY (SOON)</button>
-    <button class="navButton navDisabled">ARCANUM (SOON)</button>
-    <button class="navButton" id="btnTwitter">X (TWITTER)</button>
-  </div>
-
-  <!-- LOGIN OVERLAY (Enter wallet) -->
-  <div id="loginContainer">
-    <div id="loginContent">
-      <h2>Enter your BTC Taproot wallet</h2>
-      <input id="walletInput" type="text" placeholder="62 chars lowercase [a-z0-9]" maxlength="62" />
-      <button id="loginOkButton">OK</button>
-      <button id="loginCancelButton">Cancel</button>
-    </div>
-  </div>
-
-  <!-- MENU CONTAINER (появляется при gameState="menu") -->
+  <!-- МЕНЮ-КОНТЕЙНЕР (ВКЛЮЧАЕТ верхний ряд кнопок (Anomalies/Stray/Arc) + всё остальное) -->
   <div id="menuContainer">
+    <!-- Верхняя панель (ранее topNav) -->
+    <div id="menuTopRow">
+      <button class="navButton navActive">ANOMALIES</button>
+      <button class="navButton navDisabled">STRAY (SOON)</button>
+      <button class="navButton navDisabled">ARCANUM (SOON)</button>
+      <button class="navButton" id="btnTwitter">X (TWITTER)</button>
+    </div>
+
+    <!-- Топ-секция (заголовок + подпись) -->
     <div id="topSection">
       <h1>ANOMALIES GAME</h1>
       <p>Collect as many unusual digits as you can in 60 seconds!</p>
     </div>
 
+    <!-- Центр (Start Game, Records, Buy + Objective/Controls) -->
     <div id="centerSection">
       <div id="centerLeft">
         <button id="btnStart"   class="menuButton">Start Game</button>
@@ -342,6 +316,7 @@
       </div>
     </div>
 
+    <!-- Низ (примеры) -->
     <div id="bottomSection">
       <div class="exampleBlock">
         <h3>Upside-down digits</h3>
