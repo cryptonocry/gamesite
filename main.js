@@ -8,10 +8,9 @@ import {
   bfsCollectValue, bfsCollectAnomaly, getClickedDigit
 } from "./game.js";
 import { fetchAllParticipantsFromXano } from "./api.js";
-import { showRecordsOverlay } from "./ui.js";
 
 // ---------------------------------------------------
-// ФУНКЦИИ ДЛЯ ЗВУКОВ (пример, если у вас есть plus.wav / move.wav)
+// ЗВУКИ (пример, если у вас есть plus.wav / move.wav)
 // ---------------------------------------------------
 function playCollectSound() {
   const s = new Audio("plus.wav"); 
@@ -26,30 +25,30 @@ function playMoveSound() {
 }
 
 // ---------- HTML ELEMENTS ----------
-const fullscreenButton = document.getElementById("fullscreenButton");
-const topNav           = document.getElementById("topNav");
+const fullscreenButton       = document.getElementById("fullscreenButton");
+const topNav                 = document.getElementById("topNav");
 
-const loginContainer   = document.getElementById("loginContainer");
-const walletInput      = document.getElementById("walletInput");
-const loginOkButton    = document.getElementById("loginOkButton");
-const loginCancelButton= document.getElementById("loginCancelButton");
+const loginContainer         = document.getElementById("loginContainer");
+const walletInput            = document.getElementById("walletInput");
+const loginOkButton          = document.getElementById("loginOkButton");
+const loginCancelButton      = document.getElementById("loginCancelButton");
 
-const menuContainer    = document.getElementById("menuContainer");
-const btnStart         = document.getElementById("btnStart");
-const btnRecords       = document.getElementById("btnRecords");
-const btnBuy           = document.getElementById("btnBuy");
+const menuContainer          = document.getElementById("menuContainer");
+const btnStart               = document.getElementById("btnStart");
+const btnRecords             = document.getElementById("btnRecords");
+const btnBuy                 = document.getElementById("btnBuy");
 
-const gameCanvas       = document.getElementById("gameCanvas");
-const ctx              = gameCanvas.getContext("2d");
+const gameCanvas             = document.getElementById("gameCanvas");
+const ctx                    = gameCanvas.getContext("2d");
 
-const gameOverOverlay  = document.getElementById("gameOverOverlay");
-const finalScore       = document.getElementById("finalScore");
-const btnMenuOver      = document.getElementById("btnMenu");
-const btnRestartOver   = document.getElementById("btnRestart");
+const gameOverOverlay        = document.getElementById("gameOverOverlay");
+const finalScore             = document.getElementById("finalScore");
+const btnMenuOver            = document.getElementById("btnMenu");
+const btnRestartOver         = document.getElementById("btnRestart");
 
-const recordsContainer      = document.getElementById("recordsContainer");
-const recordsTableContainer = document.getElementById("recordsTableContainer");
-const closeRecordsButton    = document.getElementById("closeRecordsButton");
+const recordsContainer       = document.getElementById("recordsContainer");
+const recordsTableContainer  = document.getElementById("recordsTableContainer");
+const closeRecordsButton     = document.getElementById("closeRecordsButton");
 
 // ---------- GAME STATE ----------
 let gameState  = "menu"; 
@@ -85,14 +84,17 @@ btnStart.addEventListener("click", () => {
   showLoginOverlay();
 });
 
-// СООБЩЕНИЕ ВАЖНО: тут передаём и recordsTableContainer, recordsContainer, currentPlayer
+// При нажатии Records -> вызываем showRecordsOverlay(...)
 btnRecords.addEventListener("click", () => {
   showRecordsOverlay(recordsTableContainer, recordsContainer, currentPlayer);
 });
 
+// Кнопка BUY TOKEN
 btnBuy.addEventListener("click", () => {
   window.open("https://odin.fun/", "_blank");
 });
+
+// Кнопка TWITTER
 const btnTwitter = document.getElementById("btnTwitter");
 btnTwitter.addEventListener("click", () => {
   window.open("https://x.com/ANOMALIESGAME", "_blank");
@@ -123,12 +125,16 @@ function showLoginOverlay() {
 }
 
 // ---------- RECORDS OVERLAY ----------
+// Закрываем рекорды, возвращаемся в menu
 closeRecordsButton.addEventListener("click", () => {
   recordsContainer.style.display = "none";
+  gameState = "menu"; 
+  updateUI();
 });
 
 // ---------- GAME OVER BUTTONS ----------
 btnRestartOver.addEventListener("click", () => {
+  // Если есть кошелёк, сразу startGame(); иначе — покажем overlay
   if (currentPlayer && currentPlayer.wallet) {
     startGame();
   } else {
@@ -188,7 +194,7 @@ gameCanvas.addEventListener("click", (e) => {
   const anomaly = digit.anomaly;
   const currentTime = performance.now();
 
-  // Собираем аномалии
+  // Сбор аномалий
   if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
     const group = bfsCollectAnomaly(gx, gy, anomaly);
     if (group.length >= 5) {
@@ -214,7 +220,7 @@ gameCanvas.addEventListener("click", (e) => {
     }
   }
 
-  // Собираем одинаковые по значению
+  // Сбор одинаковых значений
   const groupVal = bfsCollectValue(gx, gy);
   if (groupVal.length >= 5) {
     const fx = gameCanvas.width / 4;
