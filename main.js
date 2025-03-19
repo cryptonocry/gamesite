@@ -9,14 +9,15 @@ import {
 } from "./game.js";
 import { showRecordsOverlay } from "./ui.js";
 
-// (Если нужно) import { fetchAllParticipantsFromXano } from "./api.js";
-
-// ------------------ ЗВУКИ ------------------
+// ---------------------------------------------------
+// Пример звуков (если есть plus.wav / move.wav)
+// ---------------------------------------------------
 function playCollectSound() {
   const s = new Audio("plus.wav"); 
   s.volume = 0.7; 
   s.play(); 
 }
+
 function playMoveSound() {
   const s = new Audio("move.wav");
   s.volume = 0.3;
@@ -26,17 +27,17 @@ function playMoveSound() {
 // ---------- HTML ELEMENTS ----------
 const fullscreenButton = document.getElementById("fullscreenButton");
 
+// Теперь ВСЁ меню (включая верхнюю «ANOMALIES / STRAY / ...») лежит в #menuContainer
+const menuContainer    = document.getElementById("menuContainer");
+
 const loginContainer   = document.getElementById("loginContainer");
 const walletInput      = document.getElementById("walletInput");
 const loginOkButton    = document.getElementById("loginOkButton");
 const loginCancelButton= document.getElementById("loginCancelButton");
 
-const menuContainer    = document.getElementById("menuContainer");
-// Теперь в menuContainer лежит всё меню, включая верхние кнопки
 const btnStart         = document.getElementById("btnStart");
 const btnRecords       = document.getElementById("btnRecords");
 const btnBuy           = document.getElementById("btnBuy");
-
 const btnTwitter       = document.getElementById("btnTwitter");
 
 const gameCanvas       = document.getElementById("gameCanvas");
@@ -102,7 +103,7 @@ loginOkButton.addEventListener("click", () => {
     return;
   }
   if (wallet.length !== 62) {
-    alert("Invalid wallet length! Must be 62 characters.");
+    alert("Invalid wallet length! Must be 62 chars.");
     return;
   }
   currentPlayer = { wallet, score: 0 };
@@ -269,6 +270,7 @@ function drawGame() {
   ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
   const now = performance.now();
 
+  // Рисуем клетки
   drawCells(ctx, cameraX, cameraY, gameCanvas.width, gameCanvas.height);
 
   // Летающие цифры
@@ -368,7 +370,6 @@ function startGame() {
 // ---------- UPDATE UI ----------
 function updateUI() {
   if (gameState === "menu") {
-    // Показываем ВСЁ меню (включая верхние кнопки)
     menuContainer.style.display = "flex";
     gameCanvas.style.display    = "none";
     gameOverOverlay.style.display = "none";
@@ -376,7 +377,6 @@ function updateUI() {
     loginContainer.style.display   = "none";
 
   } else if (gameState === "game") {
-    // Скрываем меню, показываем игру
     menuContainer.style.display   = "none";
     gameCanvas.style.display      = "block";
     gameOverOverlay.style.display = "none";
@@ -394,5 +394,5 @@ function updateUI() {
   }
 }
 
-// При загрузке → состояние "menu"
+// При загрузке → menu
 updateUI();
