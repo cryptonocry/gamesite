@@ -10,14 +10,18 @@ import {
 import { fetchAllParticipantsFromXano } from "./api.js";
 
 // ---------------------------------------------------
-// Функция для проигрывания короткого звука plus.wav
-// каждый раз создаём новый объект Audio, чтобы
-// звук мог проигрываться несколько раз подряд без пропусков
+// ФУНКЦИИ ДЛЯ ЗВУКОВ
 // ---------------------------------------------------
 function playCollectSound() {
   const s = new Audio("plus.wav"); 
   s.volume = 0.8; 
   s.play(); 
+}
+
+function playMoveSound() {
+  const s = new Audio("move.wav");
+  s.volume = 0.8;
+  s.play();
 }
 
 // ---------- HTML ELEMENTS ----------
@@ -50,7 +54,7 @@ const closeRecordsButton    = document.getElementById("closeRecordsButton");
 let gameState  = "menu"; 
 let currentPlayer = null;
 
-const START_TIME = 60;
+const START_TIME    = 60;
 const FOLDER_HEIGHT = 80;
 let scoreTotal = 0;
 let timeLeft   = START_TIME;
@@ -157,6 +161,9 @@ gameCanvas.addEventListener("mousedown", (e) => {
     isDragging = true;
     dragStart = { x: e.clientX, y: e.clientY };
     cameraStart = { x: cameraX, y: cameraY };
+
+    // ----- Звук перемещения -----
+    playMoveSound();
   }
 });
 gameCanvas.addEventListener("mousemove", (e) => {
@@ -206,8 +213,7 @@ gameCanvas.addEventListener("click", (e) => {
       folderScores[idx] += group.length;
       timeLeft += 1;
 
-      // Проиграть звук
-      playCollectSound();
+      playCollectSound(); // <-- ЗВУК сборки
 
       const plusAnim = new TimePlusAnimation("+1 s", 200, 20, currentTime, 2000);
       timeAnimations[Date.now()] = plusAnim;
@@ -231,8 +237,7 @@ gameCanvas.addEventListener("click", (e) => {
     folderScores[0] += groupVal.length;
     timeLeft += 1;
 
-    // Проиграть звук
-    playCollectSound();
+    playCollectSound(); // <-- ЗВУК сборки
 
     const plusAnim = new TimePlusAnimation("+1 s", 200, 20, currentTime, 2000);
     timeAnimations[Date.now()] = plusAnim;
