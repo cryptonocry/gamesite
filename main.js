@@ -10,7 +10,7 @@ import {
 import { showRecordsOverlay } from "./ui.js";
 import { fetchAllParticipantsFromXano } from "./api.js";
 
-// Звуки
+// Звуки звуки
 function playCollectSound() {
   const s = new Audio("plus.wav"); 
   s.volume = 0.7; 
