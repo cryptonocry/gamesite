@@ -7,7 +7,10 @@ import {
   generateChunk, ensureVisibleChunks, drawCells,
   bfsCollectValue, bfsCollectAnomaly, getClickedDigit
 } from "./game.js";
+// ВАЖНО: импортируем showRecordsOverlay
 import { showRecordsOverlay } from "./ui.js";
+
+import { fetchAllParticipantsFromXano } from "./api.js";
 
 // ---------------------------------------------------
 // Пример звуков (если есть plus.wav / move.wav)
@@ -25,32 +28,30 @@ function playMoveSound() {
 }
 
 // ---------- HTML ELEMENTS ----------
-const fullscreenButton = document.getElementById("fullscreenButton");
+const fullscreenButton       = document.getElementById("fullscreenButton");
+const topNav                 = document.getElementById("topNav");
 
-// Теперь ВСЁ меню (включая верхнюю «ANOMALIES / STRAY / ...») лежит в #menuContainer
-const menuContainer    = document.getElementById("menuContainer");
+const loginContainer         = document.getElementById("loginContainer");
+const walletInput            = document.getElementById("walletInput");
+const loginOkButton          = document.getElementById("loginOkButton");
+const loginCancelButton      = document.getElementById("loginCancelButton");
 
-const loginContainer   = document.getElementById("loginContainer");
-const walletInput      = document.getElementById("walletInput");
-const loginOkButton    = document.getElementById("loginOkButton");
-const loginCancelButton= document.getElementById("loginCancelButton");
+const menuContainer          = document.getElementById("menuContainer");
+const btnStart               = document.getElementById("btnStart");
+const btnRecords             = document.getElementById("btnRecords");
+const btnBuy                 = document.getElementById("btnBuy");
 
-const btnStart         = document.getElementById("btnStart");
-const btnRecords       = document.getElementById("btnRecords");
-const btnBuy           = document.getElementById("btnBuy");
-const btnTwitter       = document.getElementById("btnTwitter");
+const gameCanvas             = document.getElementById("gameCanvas");
+const ctx                    = gameCanvas.getContext("2d");
 
-const gameCanvas       = document.getElementById("gameCanvas");
-const ctx              = gameCanvas.getContext("2d");
+const gameOverOverlay        = document.getElementById("gameOverOverlay");
+const finalScore             = document.getElementById("finalScore");
+const btnMenuOver            = document.getElementById("btnMenu");
+const btnRestartOver         = document.getElementById("btnRestart");
 
-const gameOverOverlay  = document.getElementById("gameOverOverlay");
-const finalScore       = document.getElementById("finalScore");
-const btnMenuOver      = document.getElementById("btnMenu");
-const btnRestartOver   = document.getElementById("btnRestart");
-
-const recordsContainer      = document.getElementById("recordsContainer");
-const recordsTableContainer = document.getElementById("recordsTableContainer");
-const closeRecordsButton    = document.getElementById("closeRecordsButton");
+const recordsContainer       = document.getElementById("recordsContainer");
+const recordsTableContainer  = document.getElementById("recordsTableContainer");
+const closeRecordsButton     = document.getElementById("closeRecordsButton");
 
 // ---------- GAME STATE ----------
 let gameState  = "menu"; 
@@ -82,15 +83,24 @@ fullscreenButton.addEventListener("click", () => {
 });
 
 // ---------- MENU BUTTONS ----------
+
+// Нажали «Start Game» → показываем оверлей кошелька, если надо
 btnStart.addEventListener("click", () => {
   showLoginOverlay();
 });
+
+// Нажали «Records» → показываем оверлей рекордов (sorted & rank)
 btnRecords.addEventListener("click", () => {
   showRecordsOverlay(recordsTableContainer, recordsContainer, currentPlayer);
 });
+
+// Нажали «BUY TOKEN» → открываем ссылку
 btnBuy.addEventListener("click", () => {
   window.open("https://odin.fun/", "_blank");
 });
+
+// Кнопка TWITTER
+const btnTwitter = document.getElementById("btnTwitter");
 btnTwitter.addEventListener("click", () => {
   window.open("https://x.com/ANOMALIESGAME", "_blank");
 });
@@ -103,7 +113,7 @@ loginOkButton.addEventListener("click", () => {
     return;
   }
   if (wallet.length !== 62) {
-    alert("Invalid wallet length! Must be 62 chars.");
+    alert("Invalid wallet length! Must be 62 characters.");
     return;
   }
   currentPlayer = { wallet, score: 0 };
@@ -120,9 +130,9 @@ function showLoginOverlay() {
 }
 
 // ---------- RECORDS OVERLAY ----------
+// Нажали «Close» → скрываем блок, возвращаемся в menu
 closeRecordsButton.addEventListener("click", () => {
   recordsContainer.style.display = "none";
-  // Возвращаемся в menu
   gameState = "menu";
   updateUI();
 });
@@ -135,6 +145,7 @@ btnRestartOver.addEventListener("click", () => {
     showLoginOverlay();
   }
 });
+
 btnMenuOver.addEventListener("click", () => {
   gameState = "menu";
   updateUI();
@@ -186,7 +197,7 @@ gameCanvas.addEventListener("click", (e) => {
   const anomaly = digit.anomaly;
   const currentTime = performance.now();
 
-  // Аномалии
+  // Собираем аномалии
   if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
     const group = bfsCollectAnomaly(gx, gy, anomaly);
     if (group.length >= 5) {
@@ -212,7 +223,7 @@ gameCanvas.addEventListener("click", (e) => {
     }
   }
 
-  // Одинаковые по значению
+  // Собираем одинаковые по значению
   const groupVal = bfsCollectValue(gx, gy);
   if (groupVal.length >= 5) {
     const fx = gameCanvas.width / 4;
@@ -357,12 +368,13 @@ function startGame() {
   cameraX = 0;
   cameraY = 0;
 
-  // Генерация
+  // Генерация начальных чанков
   for (let cx = -1; cx <= 2; cx++) {
     for (let cy = -1; cy <= 2; cy++) {
       generateChunk(cx, cy);
     }
   }
+
   gameState = "game";
   updateUI();
 }
@@ -376,12 +388,16 @@ function updateUI() {
     recordsContainer.style.display = "none";
     loginContainer.style.display   = "none";
 
+    topNav.style.display = "flex";
+
   } else if (gameState === "game") {
     menuContainer.style.display   = "none";
     gameCanvas.style.display      = "block";
     gameOverOverlay.style.display = "none";
     recordsContainer.style.display= "none";
     loginContainer.style.display  = "none";
+
+    topNav.style.display = "none";
 
   } else if (gameState === "game_over") {
     menuContainer.style.display   = "none";
@@ -391,8 +407,10 @@ function updateUI() {
 
     finalScore.textContent = `Your score: ${lastScore}`;
     gameOverOverlay.style.display = "block";
+
+    topNav.style.display = "none";
   }
 }
 
-// При загрузке → menu
+// При старте → меню
 updateUI();
