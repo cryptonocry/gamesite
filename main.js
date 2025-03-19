@@ -34,7 +34,7 @@ function playRightClickSound() {
   const soundFiles = ["1.wav", "2.wav", "3.wav", "4.wav"];
   const soundIndex = rightClickCount % 4;
   const s = new Audio(soundFiles[soundIndex]);
-  s.volume = 0.1;
+  s.volume = 0.05;
   s.play();
   rightClickCount++;
 }
