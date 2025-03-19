@@ -83,9 +83,12 @@ fullscreenButton.addEventListener("click", () => {
 btnStart.addEventListener("click", () => {
   showLoginOverlay();
 });
+
+// СООБЩЕНИЕ ВАЖНО: тут передаём и recordsTableContainer, recordsContainer, currentPlayer
 btnRecords.addEventListener("click", () => {
-  showRecordsOverlay();
+  showRecordsOverlay(recordsTableContainer, recordsContainer, currentPlayer);
 });
+
 btnBuy.addEventListener("click", () => {
   window.open("https://odin.fun/", "_blank");
 });
@@ -122,24 +125,8 @@ function showLoginOverlay() {
 closeRecordsButton.addEventListener("click", () => {
   recordsContainer.style.display = "none";
 });
-async function showRecordsOverlay() {
-  recordsContainer.style.display = "block";
-  recordsTableContainer.innerHTML = "Loading...";
-  const records = await fetchAllParticipantsFromXano();
-  if (!records || records.length === 0) {
-    recordsTableContainer.innerHTML = "No records found.";
-    return;
-  }
-  let html = "<table><tr><th>BTC Wallet</th><th>Score</th></tr>";
-  records.forEach((r) => {
-    html += `<tr><td>${r.wallet}</td><td>${r.score}</td></tr>`;
-  });
-  html += "</table>";
-  recordsTableContainer.innerHTML = html;
-}
 
 // ---------- GAME OVER BUTTONS ----------
-// Если кошелёк уже сохранён – начинаем заново без ввода
 btnRestartOver.addEventListener("click", () => {
   if (currentPlayer && currentPlayer.wallet) {
     startGame();
@@ -168,7 +155,6 @@ gameCanvas.addEventListener("mousedown", (e) => {
     dragStart = { x: e.clientX, y: e.clientY };
     cameraStart = { x: cameraX, y: cameraY };
 
-    // Звук перемещения
     playMoveSound();
   }
 });
