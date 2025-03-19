@@ -14,7 +14,7 @@ import { fetchAllParticipantsFromXano } from "./api.js";
 // ---------------------------------------------------
 function playCollectSound() {
   const s = new Audio("plus.wav"); 
-  s.volume = 0.8; 
+  s.volume = 0.7; 
   s.play(); 
 }
 
