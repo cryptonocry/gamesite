@@ -20,7 +20,7 @@ function playCollectSound() {
 
 function playMoveSound() {
   const s = new Audio("move.wav");
-  s.volume = 0.4;
+  s.volume = 0.2;
   s.play();
 }
 
