@@ -290,6 +290,10 @@
       border-radius: 5px;
       cursor: pointer;
     }
+    #playWithoutWalletButton {
+  margin-top: 20px; /* Отступ сверху */
+  width: 100%; /* Занимает всю ширину блока */
+}
   </style>
 </head>
 <body>
@@ -304,15 +308,18 @@
     <button class="navButton" id="btnTwitter">X (TWITTER)</button>
   </div>
 
-  <!-- LOGIN OVERLAY (Enter wallet) -->
-  <div id="loginContainer">
-    <div id="loginContent">
-      <h2>Enter your BTC Taproot wallet</h2>
-      <input id="walletInput" type="text" placeholder="62 chars lowercase [a-z0-9]" maxlength="62" />
+<!-- LOGIN OVERLAY (Enter wallet) -->
+<div id="loginContainer">
+  <div id="loginContent">
+    <h2>Enter your BTC Taproot wallet</h2>
+    <input id="walletInput" type="text" placeholder="62 chars lowercase [a-z0-9]" maxlength="62" />
+    <div style="margin-top: 10px;">
       <button id="loginOkButton">OK</button>
       <button id="loginCancelButton">Cancel</button>
     </div>
+    <button id="playWithoutWalletButton" class="menuButton buyButton">Play without a wallet</button>
   </div>
+</div>
 
   <!-- MENU CONTAINER (появляется при gameState="menu") -->
   <div id="menuContainer">
