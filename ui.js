@@ -1,10 +1,6 @@
 import { fetchAllParticipantsFromXano } from "./api.js";
 
-function maskWallet(wallet) {
-  if (wallet.length <= 8) return wallet;
-  return wallet.substring(0, 4) + "****" + wallet.substring(wallet.length - 4);
-}
-
+// Вариант без маскировки кошелька
 export async function showRecordsOverlay(recordsTableContainer, recordsContainer, currentPlayer) {
   const records = await fetchAllParticipantsFromXano();
   if (!records || records.length === 0) {
@@ -13,27 +9,27 @@ export async function showRecordsOverlay(recordsTableContainer, recordsContainer
     return;
   }
 
-  // Сортируем по убыванию счёта
+  // 1) Сортируем по убыванию счёта
   records.sort((a, b) => b.score - a.score);
 
-  // Шапка таблицы
+  // 2) Заголовок таблицы (#, BTC Wallet, Score)
   let html = "<table><tr><th>#</th><th>BTC Wallet</th><th>Score</th></tr>";
 
-  // Вывод строк
+  // 3) Вывод строк
   records.forEach((rec, index) => {
-    const rank = index + 1; // 1,2,3,...
-    const shortWallet = maskWallet(rec.wallet || "");
+    const rank = index + 1; // 1, 2, 3...
     let rowId = "";
 
-    // Если это текущий игрок – помечаем строку
+    // Если это кошелёк текущего игрока — подсветим
     if (currentPlayer && rec.wallet === currentPlayer.wallet) {
       rowId = " id='currentPlayerRow'";
     }
 
+    // Выводим кошелёк полностью (без звёздочек)
     html += `
       <tr${rowId}>
         <td>${rank}</td>
-        <td>${shortWallet}</td>
+        <td>${rec.wallet}</td>
         <td>${rec.score}</td>
       </tr>
     `;
@@ -43,7 +39,7 @@ export async function showRecordsOverlay(recordsTableContainer, recordsContainer
   recordsTableContainer.innerHTML = html;
   recordsContainer.style.display = "block";
 
-  // Скроллим к текущему игроку (если есть)
+  // Прокрутка к текущему игроку (если есть)
   setTimeout(() => {
     const row = document.getElementById("currentPlayerRow");
     if (row) {
