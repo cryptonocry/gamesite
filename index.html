@@ -44,7 +44,7 @@
       z-index: 100;
     }
 
-    /* ВЕРХНЯЯ ПАНЕЛЬ (ANOMALIES / STRAY / ARCANUM / TWITTER) – теперь часть menuContainer */
+    /* ВЕРХНЯЯ ПАНЕЛЬ */
     #menuTopRow {
       display: flex;
       flex-direction: row;
@@ -268,10 +268,10 @@
   <!-- FULLSCREEN BUTTON -->
   <button id="fullscreenButton">Fullscreen</button>
 
-  <!-- МЕНЮ (включая верхние кнопки: Anomalies / Stray / Arcanum / Twitter) -->
+  <!-- Меню-контейнер (включает верхнюю панель и всё меню) -->
   <div id="menuContainer">
     
-    <!-- Верхняя панель -->
+    <!-- Верхняя панель (кнопки ANOMALIES, STRAY, ARCANUM, TWITTER) -->
     <div id="menuTopRow">
       <button class="navButton navActive">ANOMALIES</button>
       <button class="navButton navDisabled">STRAY (SOON)</button>
@@ -279,13 +279,13 @@
       <button class="navButton" id="btnTwitter">X (TWITTER)</button>
     </div>
 
-    <!-- Топ-секция (заголовок, подзаголовок) -->
+    <!-- Топ-секция (заголовок) -->
     <div id="topSection">
       <h1>ANOMALIES GAME</h1>
       <p>Collect as many unusual digits as you can in 60 seconds!</p>
     </div>
 
-    <!-- Средняя часть (кнопки и текст) -->
+    <!-- Центр (кнопки Start/Records/BuyToken + текст) -->
     <div id="centerSection">
       <div id="centerLeft">
         <button id="btnStart"   class="menuButton">Start Game</button>
@@ -307,7 +307,7 @@
       </div>
     </div>
 
-    <!-- Нижняя часть (примеры) -->
+    <!-- Примеры -->
     <div id="bottomSection">
       <div class="exampleBlock">
         <h3>Upside-down digits</h3>
@@ -320,10 +320,10 @@
     </div>
   </div>
 
-  <!-- CANVAS (игра) -->
+  <!-- Игровое поле -->
   <canvas id="gameCanvas"></canvas>
 
-  <!-- GAME OVER OVERLAY -->
+  <!-- Game Over Overlay -->
   <div id="gameOverOverlay">
     <div id="gameOverContent">
       <h1>Time's up!</h1>
@@ -333,7 +333,7 @@
     </div>
   </div>
 
-  <!-- RECORDS OVERLAY -->
+  <!-- Records Overlay -->
   <div id="recordsContainer">
     <div id="recordsContent">
       <h2>Ranking</h2>
