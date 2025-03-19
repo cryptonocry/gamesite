@@ -7,21 +7,41 @@ function maskWallet(wallet) {
 
 export async function showRecordsOverlay(recordsTableContainer, recordsContainer, currentPlayer) {
   const records = await fetchAllParticipantsFromXano();
-  let html = "<table><tr><th>BTC Wallet</th><th>Score</th></tr>";
-  let currentPlayerIndex = -1;
+  if (!records || records.length === 0) {
+    recordsTableContainer.innerHTML = "No records found.";
+    recordsContainer.style.display = "block";
+    return;
+  }
+
+  // 1) Сортируем по убыванию счёта
+  records.sort((a, b) => b.score - a.score);
+
+  // 2) Заголовок таблицы: #, Wallet, Score
+  let html = "<table><tr><th>#</th><th>BTC Wallet</th><th>Score</th></tr>";
+
+  // 3) Выводим строки
   records.forEach((rec, index) => {
+    // rank = index + 1
+    const rank = index + 1;
+
+    // Обрезаем кошелёк, если нужно
     const shortWallet = maskWallet(rec.wallet || "");
+
+    // Подсветка текущего игрока
     let rowId = "";
     if (currentPlayer && rec.wallet === currentPlayer.wallet) {
       rowId = " id='currentPlayerRow'";
-      currentPlayerIndex = index;
     }
-    // Можно выводить shortWallet вместо полного rec.wallet, если хотите
-    html += `<tr${rowId}>
-               <td>${rec.wallet}</td>
-               <td>${rec.score}</td>
-             </tr>`;
+
+    html += `
+      <tr${rowId}>
+        <td>${rank}</td>
+        <td>${shortWallet}</td>
+        <td>${rec.score}</td>
+      </tr>
+    `;
   });
+
   html += "</table>";
   recordsTableContainer.innerHTML = html;
   recordsContainer.style.display = "block";
