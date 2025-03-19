@@ -7,10 +7,13 @@ import {
   generateChunk, ensureVisibleChunks, drawCells,
   bfsCollectValue, bfsCollectAnomaly, getClickedDigit
 } from "./game.js";
+// ВАЖНО: импортируем showRecordsOverlay
+import { showRecordsOverlay } from "./ui.js";
+
 import { fetchAllParticipantsFromXano } from "./api.js";
 
 // ---------------------------------------------------
-// ЗВУКИ (пример, если у вас есть plus.wav / move.wav)
+// Пример звуков (если есть plus.wav / move.wav)
 // ---------------------------------------------------
 function playCollectSound() {
   const s = new Audio("plus.wav"); 
@@ -80,16 +83,18 @@ fullscreenButton.addEventListener("click", () => {
 });
 
 // ---------- MENU BUTTONS ----------
+
+// Нажали «Start Game» → показываем оверлей кошелька, если надо
 btnStart.addEventListener("click", () => {
   showLoginOverlay();
 });
 
-// При нажатии Records -> вызываем showRecordsOverlay(...)
+// Нажали «Records» → показываем оверлей рекордов (sorted & rank)
 btnRecords.addEventListener("click", () => {
   showRecordsOverlay(recordsTableContainer, recordsContainer, currentPlayer);
 });
 
-// Кнопка BUY TOKEN
+// Нажали «BUY TOKEN» → открываем ссылку
 btnBuy.addEventListener("click", () => {
   window.open("https://odin.fun/", "_blank");
 });
@@ -125,16 +130,15 @@ function showLoginOverlay() {
 }
 
 // ---------- RECORDS OVERLAY ----------
-// Закрываем рекорды, возвращаемся в menu
+// Нажали «Close» → скрываем блок, возвращаемся в menu
 closeRecordsButton.addEventListener("click", () => {
   recordsContainer.style.display = "none";
-  gameState = "menu"; 
+  gameState = "menu";
   updateUI();
 });
 
 // ---------- GAME OVER BUTTONS ----------
 btnRestartOver.addEventListener("click", () => {
-  // Если есть кошелёк, сразу startGame(); иначе — покажем overlay
   if (currentPlayer && currentPlayer.wallet) {
     startGame();
   } else {
@@ -161,7 +165,6 @@ gameCanvas.addEventListener("mousedown", (e) => {
     isDragging = true;
     dragStart = { x: e.clientX, y: e.clientY };
     cameraStart = { x: cameraX, y: cameraY };
-
     playMoveSound();
   }
 });
@@ -194,7 +197,7 @@ gameCanvas.addEventListener("click", (e) => {
   const anomaly = digit.anomaly;
   const currentTime = performance.now();
 
-  // Сбор аномалий
+  // Собираем аномалии
   if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
     const group = bfsCollectAnomaly(gx, gy, anomaly);
     if (group.length >= 5) {
@@ -220,7 +223,7 @@ gameCanvas.addEventListener("click", (e) => {
     }
   }
 
-  // Сбор одинаковых значений
+  // Собираем одинаковые по значению
   const groupVal = bfsCollectValue(gx, gy);
   if (groupVal.length >= 5) {
     const fx = gameCanvas.width / 4;
