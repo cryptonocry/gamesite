@@ -171,7 +171,7 @@ gameCanvas.addEventListener("mousedown", (e) => {
     isDragging = true;
     dragStart = { x: e.clientX, y: e.clientY };
     cameraStart = { x: cameraX, y: cameraY };
-    playRightClickSound(); // Звук для ПКМ
+    playRightClickSound(); // Заменили playMoveSound на новые звуки
   }
 });
 gameCanvas.addEventListener("mousemove", (e) => {
@@ -220,7 +220,7 @@ gameCanvas.addEventListener("click", (e) => {
       folderScores[idx] += group.length;
       timeLeft += 1;
 
-      playCollectSound(); // Звук сбора
+      playCollectSound();
 
       const plusAnim = new TimePlusAnimation("+1 s", 200, 20, currentTime, 2000);
       timeAnimations[Date.now()] = plusAnim;
@@ -243,7 +243,7 @@ gameCanvas.addEventListener("click", (e) => {
     folderScores[0] += groupVal.length;
     timeLeft += 1;
 
-    playCollectSound(); // Звук сбора
+    playCollectSound();
 
     const plusAnim = new TimePlusAnimation("+1 s", 200, 20, currentTime, 2000);
     timeAnimations[Date.now()] = plusAnim;
@@ -261,7 +261,7 @@ function updateGame(dt) {
       currentPlayer.score = scoreTotal;
       addParticipantToXano(currentPlayer.wallet, scoreTotal);
     }
-    playEndSound(); // Звук окончания
+    playEndSound(); // Добавляем звук окончания
     updateUI();
     return;
   }
@@ -322,55 +322,12 @@ function drawGame() {
   const tw = ctx.measureText(timerText).width;
   const tx = gameCanvas.width / 2;
   const ty = 30;
-  ctx.fillStyle = "rgba(0,0,0,0.ទ
-
-  ctx.fillStyle = "#021013";
-  ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
-  const now = performance.now();
-
-  drawCells(ctx, cameraX, cameraY, gameCanvas.width, gameCanvas.height);
-
-  for (let fd of flyingDigits) {
-    fd.draw(ctx, now);
-  }
-
-  for (let i = 0; i < 2; i++) {
-    const rectX = i * gameCanvas.width / 2;
-    const rectY = gameCanvas.height - FOLDER_HEIGHT;
-    ctx.fillStyle = "#7AC0D6";
-    ctx.fillRect(rectX, rectY, gameCanvas.width / 2, FOLDER_HEIGHT);
-    ctx.strokeStyle = "#7AC0D6";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(rectX, rectY, gameCanvas.width / 2, FOLDER_HEIGHT);
-    ctx.font = "24px Arial";
-    ctx.fillStyle = "#021013";
-    ctx.textAlign = "center";
-    ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + gameCanvas.width / 4, rectY + FOLDER_HEIGHT / 2);
-  }
-
-  ctx.save();
-  ctx.font = "24px Arial";
-  const scoreText = `Score: ${scoreTotal}`;
-  const sw = ctx.measureText(scoreText).width;
-  ctx.fillStyle = "rgba(0,0,0,0.5)";
-  ctx.fillRect(10, 10, sw + 10, 30);
-  ctx.fillStyle = "#7AC0D6";
-  ctx.textAlign = "left";
-  ctx.fillText(scoreText, 15, 32);
-  ctx.restore();
-
-  ctx.save();
-  ctx.font = "24px Arial";
-  const timerText = `${Math.floor(timeLeft)} s.`;
-  const tw = ctx.measureText(timerText).width;
-  const tx = gameCanvas.width / 2;
-  const ty = 30;
   ctx.fillStyle = "rgba(0,0,0,0.5)";
   ctx.fillRect(tx - tw/2 - 5, ty - 24, tw + 10, 30);
   ctx.fillStyle = "#7AC0D6";
   ctx.textAlign = "center";
   ctx.fillText(timerText, tx, ty);
-  ctx.restore();
+  ctx.restore(); // Закрываем save для таймера
 
   for (const k in timeAnimations) {
     const anim = timeAnimations[k];
@@ -394,6 +351,7 @@ function gameLoop() {
 }
 requestAnimationFrame(gameLoop);
 
+// ---------- START GAME ----------
 function startGame() {
   for (const k in cells) delete cells[k];
   generatedChunks.clear();
@@ -413,12 +371,13 @@ function startGame() {
     }
   }
 
-  playStartSound(); // Звук старта
+  playStartSound(); // Добавляем звук старта
 
   gameState = "game";
   updateUI();
 }
 
+// ---------- UPDATE UI ----------
 function updateUI() {
   if (gameState === "menu") {
     menuContainer.style.display = "flex";
