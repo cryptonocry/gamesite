@@ -13,22 +13,19 @@ export async function showRecordsOverlay(recordsTableContainer, recordsContainer
     return;
   }
 
-  // 1) Сортируем по убыванию счёта
+  // Сортируем по убыванию счёта
   records.sort((a, b) => b.score - a.score);
 
-  // 2) Заголовок таблицы: #, Wallet, Score
+  // Шапка таблицы
   let html = "<table><tr><th>#</th><th>BTC Wallet</th><th>Score</th></tr>";
 
-  // 3) Выводим строки
+  // Вывод строк
   records.forEach((rec, index) => {
-    // rank = index + 1
-    const rank = index + 1;
-
-    // Обрезаем кошелёк, если нужно
+    const rank = index + 1; // 1,2,3,...
     const shortWallet = maskWallet(rec.wallet || "");
-
-    // Подсветка текущего игрока
     let rowId = "";
+
+    // Если это текущий игрок – помечаем строку
     if (currentPlayer && rec.wallet === currentPlayer.wallet) {
       rowId = " id='currentPlayerRow'";
     }
@@ -46,6 +43,7 @@ export async function showRecordsOverlay(recordsTableContainer, recordsContainer
   recordsTableContainer.innerHTML = html;
   recordsContainer.style.display = "block";
 
+  // Скроллим к текущему игроку (если есть)
   setTimeout(() => {
     const row = document.getElementById("currentPlayerRow");
     if (row) {
