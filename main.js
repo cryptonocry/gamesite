@@ -10,7 +10,7 @@ import {
 import { fetchAllParticipantsFromXano } from "./api.js";
 
 // ---------------------------------------------------
-// ФУНКЦИИ ДЛЯ ЗВУКОВ
+// ФУНКЦИИ ДЛЯ ЗВУКОВ (Пример, если у вас есть звуки)
 // ---------------------------------------------------
 function playCollectSound() {
   const s = new Audio("plus.wav"); 
@@ -52,7 +52,7 @@ const closeRecordsButton    = document.getElementById("closeRecordsButton");
 
 // ---------- GAME STATE ----------
 let gameState  = "menu"; 
-let currentPlayer = null;
+let currentPlayer = null; // { wallet, score } после входа
 
 const START_TIME    = 60;
 const FOLDER_HEIGHT = 80;
@@ -139,12 +139,21 @@ async function showRecordsOverlay() {
 }
 
 // ---------- GAME OVER BUTTONS ----------
+// Раньше: btnRestartOver.addEventListener("click", () => { showLoginOverlay(); });
+// Теперь проверяем, есть ли currentPlayer.wallet:
+btnRestartOver.addEventListener("click", () => {
+  if (currentPlayer && currentPlayer.wallet) {
+    // Уже есть кошелёк? Запускаем игру сразу
+    startGame();
+  } else {
+    // Нет — надо спросить заново
+    showLoginOverlay();
+  }
+});
+
 btnMenuOver.addEventListener("click", () => {
   gameState = "menu";
   updateUI();
-});
-btnRestartOver.addEventListener("click", () => {
-  showLoginOverlay();
 });
 
 // ---------- RESIZE CANVAS ----------
@@ -162,7 +171,7 @@ gameCanvas.addEventListener("mousedown", (e) => {
     dragStart = { x: e.clientX, y: e.clientY };
     cameraStart = { x: cameraX, y: cameraY };
 
-    // ----- Звук перемещения -----
+    // Звук перемещения (пример, если есть move.wav)
     playMoveSound();
   }
 });
@@ -213,7 +222,7 @@ gameCanvas.addEventListener("click", (e) => {
       folderScores[idx] += group.length;
       timeLeft += 1;
 
-      playCollectSound(); // <-- ЗВУК сборки
+      playCollectSound(); // звук сбора
 
       const plusAnim = new TimePlusAnimation("+1 s", 200, 20, currentTime, 2000);
       timeAnimations[Date.now()] = plusAnim;
@@ -237,7 +246,7 @@ gameCanvas.addEventListener("click", (e) => {
     folderScores[0] += groupVal.length;
     timeLeft += 1;
 
-    playCollectSound(); // <-- ЗВУК сборки
+    playCollectSound(); // звук сбора
 
     const plusAnim = new TimePlusAnimation("+1 s", 200, 20, currentTime, 2000);
     timeAnimations[Date.now()] = plusAnim;
@@ -287,7 +296,7 @@ function drawGame() {
     fd.draw(ctx, now);
   }
 
-  // Папки снизу (Upside, Strange)
+  // Папки (Upside, Strange)
   for (let i = 0; i < 2; i++) {
     const rectX = i * gameCanvas.width / 2;
     const rectY = gameCanvas.height - FOLDER_HEIGHT;
@@ -353,7 +362,7 @@ requestAnimationFrame(gameLoop);
 
 // ---------- START GAME ----------
 function startGame() {
-  // Сброс
+  // Сбрасываем объекты игры, НО не трогаем currentPlayer
   for (const k in cells) delete cells[k];
   generatedChunks.clear();
   folderScores[0] = 0;
@@ -366,6 +375,7 @@ function startGame() {
   cameraX = 0;
   cameraY = 0;
 
+  // генерируем новые чанки
   for (let cx = -1; cx <= 2; cx++) {
     for (let cy = -1; cy <= 2; cy++) {
       generateChunk(cx, cy);
