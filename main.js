@@ -9,11 +9,16 @@ import {
 } from "./game.js";
 import { fetchAllParticipantsFromXano } from "./api.js";
 
-// ---------------------
-// 1) ЗВУК ДЛЯ +1 (plus.wav)
-// ---------------------
-const plusSound = new Audio("plus.wav");
-plusSound.volume = 0.8; // Примерно 80% громкости
+// ---------------------------------------------------
+// Функция для проигрывания короткого звука plus.wav
+// каждый раз создаём новый объект Audio, чтобы
+// звук мог проигрываться несколько раз подряд без пропусков
+// ---------------------------------------------------
+function playCollectSound() {
+  const s = new Audio("plus.wav"); 
+  s.volume = 0.8; 
+  s.play(); 
+}
 
 // ---------- HTML ELEMENTS ----------
 const fullscreenButton = document.getElementById("fullscreenButton");
@@ -77,11 +82,9 @@ btnStart.addEventListener("click", () => {
 btnRecords.addEventListener("click", () => {
   showRecordsOverlay();
 });
-// BUY TOKEN → открываем нужную ссылку
 btnBuy.addEventListener("click", () => {
   window.open("https://odin.fun/", "_blank");
 });
-// X (TWITTER)
 const btnTwitter = document.getElementById("btnTwitter");
 btnTwitter.addEventListener("click", () => {
   window.open("https://x.com/ANOMALIESGAME", "_blank");
@@ -185,7 +188,7 @@ gameCanvas.addEventListener("click", (e) => {
   const anomaly = digit.anomaly;
   const currentTime = performance.now();
 
-  // Собираем аномалии (UPSIDE / STRANGE)
+  // Собираем аномалии
   if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
     const group = bfsCollectAnomaly(gx, gy, anomaly);
     if (group.length >= 5) {
@@ -203,10 +206,8 @@ gameCanvas.addEventListener("click", (e) => {
       folderScores[idx] += group.length;
       timeLeft += 1;
 
-      // ---------------------
-      // Воспроизводим звук!
-      // ---------------------
-      plusSound.play();
+      // Проиграть звук
+      playCollectSound();
 
       const plusAnim = new TimePlusAnimation("+1 s", 200, 20, currentTime, 2000);
       timeAnimations[Date.now()] = plusAnim;
@@ -230,10 +231,8 @@ gameCanvas.addEventListener("click", (e) => {
     folderScores[0] += groupVal.length;
     timeLeft += 1;
 
-    // ---------------------
-    // Звук тоже здесь!
-    // ---------------------
-    plusSound.play();
+    // Проиграть звук
+    playCollectSound();
 
     const plusAnim = new TimePlusAnimation("+1 s", 200, 20, currentTime, 2000);
     timeAnimations[Date.now()] = plusAnim;
