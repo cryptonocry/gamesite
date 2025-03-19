@@ -14,6 +14,21 @@
       font-family: Arial, sans-serif;
     }
 
+/* Базовый курсор (arrow) для всего документа */
+body {
+  cursor: url("assets/cursors/arrow.cur"), auto;
+}
+
+/* Курсор «text» (I-beam) при наведении на текстовые элементы */
+p, span, input[type="text"], textarea {
+  cursor: url("assets/cursors/text.cur"), text;
+}
+
+/* Курсор «link» (pointer) для ссылок, кнопок и т.п. */
+a, button, .btnClass {
+  cursor: url("assets/cursors/link.cur"), pointer;
+}
+    
     /* FULLSCREEN BUTTON */
     #fullscreenButton {
       position: absolute;
