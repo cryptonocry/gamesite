@@ -389,6 +389,7 @@ function updateUI() {
     loginContainer.style.display   = "none";
 
     topNav.style.display = "flex";
+    fullscreenButton.style.display = "block"; // Явно показываем кнопку
 
   } else if (gameState === "game") {
     menuContainer.style.display   = "none";
@@ -398,6 +399,7 @@ function updateUI() {
     loginContainer.style.display  = "none";
 
     topNav.style.display = "none";
+    fullscreenButton.style.display = "none"; // Скрываем в игре
 
   } else if (gameState === "game_over") {
     menuContainer.style.display   = "none";
@@ -409,6 +411,7 @@ function updateUI() {
     gameOverOverlay.style.display = "block";
 
     topNav.style.display = "none";
+    fullscreenButton.style.display = "none"; // Скрываем при game over
   }
 }
 
