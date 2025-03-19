@@ -19,22 +19,22 @@ function playCollectSound() {
 
 function playStartSound() {
   const s = new Audio("start.wav");
-  s.volume = 0.4;
+  s.volume = 0.7;
   s.play();
 }
 
 function playEndSound() {
   const s = new Audio("end.wav");
-  s.volume = 0.4;
+  s.volume = 0.7;
   s.play();
 }
 
-let rightClickCount = 0; // Счётчик для ПКМ
+let rightClickCount = 0;
 function playRightClickSound() {
   const soundFiles = ["1.wav", "2.wav", "3.wav", "4.wav"];
   const soundIndex = rightClickCount % 4;
   const s = new Audio(soundFiles[soundIndex]);
-  s.volume = 0.05;
+  s.volume = 0.3;
   s.play();
   rightClickCount++;
 }
@@ -47,6 +47,7 @@ const loginContainer         = document.getElementById("loginContainer");
 const walletInput            = document.getElementById("walletInput");
 const loginOkButton          = document.getElementById("loginOkButton");
 const loginCancelButton      = document.getElementById("loginCancelButton");
+const playWithoutWalletButton = document.getElementById("playWithoutWalletButton"); // Новая кнопка
 
 const menuContainer          = document.getElementById("menuContainer");
 const btnStart               = document.getElementById("btnStart");
@@ -127,9 +128,17 @@ loginOkButton.addEventListener("click", () => {
   loginContainer.style.display = "none";
   startGame();
 });
+
 loginCancelButton.addEventListener("click", () => {
   loginContainer.style.display = "none";
 });
+
+playWithoutWalletButton.addEventListener("click", () => {
+  currentPlayer = null; // Сбрасываем currentPlayer
+  loginContainer.style.display = "none";
+  startGame();
+});
+
 function showLoginOverlay() {
   walletInput.value = "";
   loginContainer.style.display = "block";
@@ -145,11 +154,7 @@ closeRecordsButton.addEventListener("click", () => {
 
 // ---------- GAME OVER BUTTONS ----------
 btnRestartOver.addEventListener("click", () => {
-  if (currentPlayer && currentPlayer.wallet) {
-    startGame();
-  } else {
-    showLoginOverlay();
-  }
+  startGame(); // Убрали проверку currentPlayer, так как игра может быть без кошелька
 });
 
 btnMenuOver.addEventListener("click", () => {
@@ -171,7 +176,7 @@ gameCanvas.addEventListener("mousedown", (e) => {
     isDragging = true;
     dragStart = { x: e.clientX, y: e.clientY };
     cameraStart = { x: cameraX, y: cameraY };
-    playRightClickSound(); // Заменили playMoveSound на новые звуки
+    playRightClickSound();
   }
 });
 gameCanvas.addEventListener("mousemove", (e) => {
@@ -239,8 +244,8 @@ gameCanvas.addEventListener("click", (e) => {
       delete cells[k];
       slotsToRespawn[k] = currentTime + 2000;
     }
-    scoreTotal += groupVal.length * 10;
-    folderScores[0] += groupVal.length;
+    scoreTotal += group.length * 10;
+    folderScores[0] += group.length;
     timeLeft += 1;
 
     playCollectSound();
@@ -257,11 +262,11 @@ function updateGame(dt) {
   if (timeLeft <= 0) {
     gameState = "game_over";
     lastScore = scoreTotal;
-    if (currentPlayer) {
+    if (currentPlayer && currentPlayer.wallet) {
       currentPlayer.score = scoreTotal;
       addParticipantToXano(currentPlayer.wallet, scoreTotal);
     }
-    playEndSound(); // Добавляем звук окончания
+    playEndSound();
     updateUI();
     return;
   }
@@ -327,7 +332,7 @@ function drawGame() {
   ctx.fillStyle = "#7AC0D6";
   ctx.textAlign = "center";
   ctx.fillText(timerText, tx, ty);
-  ctx.restore(); // Закрываем save для таймера
+  ctx.restore();
 
   for (const k in timeAnimations) {
     const anim = timeAnimations[k];
@@ -351,7 +356,6 @@ function gameLoop() {
 }
 requestAnimationFrame(gameLoop);
 
-// ---------- START GAME ----------
 function startGame() {
   for (const k in cells) delete cells[k];
   generatedChunks.clear();
@@ -371,13 +375,11 @@ function startGame() {
     }
   }
 
-  playStartSound(); // Добавляем звук старта
-
+  playStartSound();
   gameState = "game";
   updateUI();
 }
 
-// ---------- UPDATE UI ----------
 function updateUI() {
   if (gameState === "menu") {
     menuContainer.style.display = "flex";
