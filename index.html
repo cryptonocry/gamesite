@@ -122,14 +122,18 @@
     }
 
     /* СРЕДНЯЯ ЧАСТЬ (кнопки слева, Objective/Controls/Hunt справа) */
-    #centerSection {
-      flex: 0 0 auto;         
-      display: flex;
-      align-items: center; 
-      justify-content: space-evenly; 
-      padding: 20px;
-      box-sizing: border-box;
-    }
+#centerSection {
+  flex: 0 0 auto;         
+  display: flex;
+  align-items: center; 
+  /* Вместо space-evenly делаем центрование */
+  justify-content: center;
+  /* Добавляем небольшой gap, чтобы колонки
+     были ближе друг к другу, например 30px */
+  gap: 30px;
+  padding: 20px;
+  box-sizing: border-box;
+}
     #centerLeft {
       display: flex;
       flex-direction: column;
