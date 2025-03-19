@@ -7,24 +7,35 @@ import {
   generateChunk, ensureVisibleChunks, drawCells,
   bfsCollectValue, bfsCollectAnomaly, getClickedDigit
 } from "./game.js";
-// ВАЖНО: импортируем showRecordsOverlay
 import { showRecordsOverlay } from "./ui.js";
-
 import { fetchAllParticipantsFromXano } from "./api.js";
 
-// ---------------------------------------------------
-// Пример звуков (если есть plus.wav / move.wav)
-// ---------------------------------------------------
+// Звуки
 function playCollectSound() {
   const s = new Audio("plus.wav"); 
   s.volume = 0.7; 
   s.play(); 
 }
 
-function playMoveSound() {
-  const s = new Audio("move.wav");
+function playStartSound() {
+  const s = new Audio("start.wav");
+  s.volume = 0.7;
+  s.play();
+}
+
+function playEndSound() {
+  const s = new Audio("end.wav");
+  s.volume = 0.7;
+  s.play();
+}
+
+function playRightClickSound() {
+  const soundFiles = ["1.wav", "2.wav", "3.wav", "4.wav"];
+  const soundIndex = rightClickCount % 4;
+  const s = new Audio(soundFiles[soundIndex]);
   s.volume = 0.3;
   s.play();
+  rightClickCount++;
 }
 
 // ---------- HTML ELEMENTS ----------
