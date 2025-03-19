@@ -10,7 +10,7 @@ import {
 import { showRecordsOverlay } from "./ui.js";
 import { fetchAllParticipantsFromXano } from "./api.js";
 
-// Звуки звуки
+// Звуки
 function playCollectSound() {
   const s = new Audio("plus.wav"); 
   s.volume = 0.7; 
@@ -29,6 +29,7 @@ function playEndSound() {
   s.play();
 }
 
+let rightClickCount = 0; // Счётчик для ПКМ
 function playRightClickSound() {
   const soundFiles = ["1.wav", "2.wav", "3.wav", "4.wav"];
   const soundIndex = rightClickCount % 4;
@@ -94,23 +95,18 @@ fullscreenButton.addEventListener("click", () => {
 });
 
 // ---------- MENU BUTTONS ----------
-
-// Нажали «Start Game» → показываем оверлей кошелька, если надо
 btnStart.addEventListener("click", () => {
   showLoginOverlay();
 });
 
-// Нажали «Records» → показываем оверлей рекордов (sorted & rank)
 btnRecords.addEventListener("click", () => {
   showRecordsOverlay(recordsTableContainer, recordsContainer, currentPlayer);
 });
 
-// Нажали «BUY TOKEN» → открываем ссылку
 btnBuy.addEventListener("click", () => {
   window.open("https://odin.fun/", "_blank");
 });
 
-// Кнопка TWITTER
 const btnTwitter = document.getElementById("btnTwitter");
 btnTwitter.addEventListener("click", () => {
   window.open("https://x.com/ANOMALIESGAME", "_blank");
@@ -141,7 +137,6 @@ function showLoginOverlay() {
 }
 
 // ---------- RECORDS OVERLAY ----------
-// Нажали «Close» → скрываем блок, возвращаемся в menu
 closeRecordsButton.addEventListener("click", () => {
   recordsContainer.style.display = "none";
   gameState = "menu";
@@ -176,7 +171,7 @@ gameCanvas.addEventListener("mousedown", (e) => {
     isDragging = true;
     dragStart = { x: e.clientX, y: e.clientY };
     cameraStart = { x: cameraX, y: cameraY };
-    playMoveSound();
+    playRightClickSound(); // Звук для ПКМ
   }
 });
 gameCanvas.addEventListener("mousemove", (e) => {
@@ -208,7 +203,6 @@ gameCanvas.addEventListener("click", (e) => {
   const anomaly = digit.anomaly;
   const currentTime = performance.now();
 
-  // Собираем аномалии
   if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
     const group = bfsCollectAnomaly(gx, gy, anomaly);
     if (group.length >= 5) {
@@ -226,7 +220,7 @@ gameCanvas.addEventListener("click", (e) => {
       folderScores[idx] += group.length;
       timeLeft += 1;
 
-      playCollectSound();
+      playCollectSound(); // Звук сбора
 
       const plusAnim = new TimePlusAnimation("+1 s", 200, 20, currentTime, 2000);
       timeAnimations[Date.now()] = plusAnim;
@@ -234,7 +228,6 @@ gameCanvas.addEventListener("click", (e) => {
     }
   }
 
-  // Собираем одинаковые по значению
   const groupVal = bfsCollectValue(gx, gy);
   if (groupVal.length >= 5) {
     const fx = gameCanvas.width / 4;
@@ -250,7 +243,7 @@ gameCanvas.addEventListener("click", (e) => {
     folderScores[0] += groupVal.length;
     timeLeft += 1;
 
-    playCollectSound();
+    playCollectSound(); // Звук сбора
 
     const plusAnim = new TimePlusAnimation("+1 s", 200, 20, currentTime, 2000);
     timeAnimations[Date.now()] = plusAnim;
@@ -268,13 +261,13 @@ function updateGame(dt) {
       currentPlayer.score = scoreTotal;
       addParticipantToXano(currentPlayer.wallet, scoreTotal);
     }
+    playEndSound(); // Звук окончания
     updateUI();
     return;
   }
   ensureVisibleChunks(cameraX, cameraY, gameCanvas.width, gameCanvas.height);
   flyingDigits = flyingDigits.filter(fd => (now - fd.startTime) < fd.duration);
 
-  // Возвращаем удалённые клетки через 2 секунды
   for (let k in slotsToRespawn) {
     if (now >= slotsToRespawn[k]) {
       const [gx, gy] = k.split("_").map(Number);
@@ -292,15 +285,12 @@ function drawGame() {
   ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
   const now = performance.now();
 
-  // Рисуем клетки
   drawCells(ctx, cameraX, cameraY, gameCanvas.width, gameCanvas.height);
 
-  // Летающие цифры
   for (let fd of flyingDigits) {
     fd.draw(ctx, now);
   }
 
-  // Папки (Upside, Strange)
   for (let i = 0; i < 2; i++) {
     const rectX = i * gameCanvas.width / 2;
     const rectY = gameCanvas.height - FOLDER_HEIGHT;
@@ -315,7 +305,6 @@ function drawGame() {
     ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + gameCanvas.width / 4, rectY + FOLDER_HEIGHT / 2);
   }
 
-  // Счёт
   ctx.save();
   ctx.font = "24px Arial";
   const scoreText = `Score: ${scoreTotal}`;
@@ -327,7 +316,49 @@ function drawGame() {
   ctx.fillText(scoreText, 15, 32);
   ctx.restore();
 
-  // Таймер
+  ctx.save();
+  ctx.font = "24px Arial";
+  const timerText = `${Math.floor(timeLeft)} s.`;
+  const tw = ctx.measureText(timerText).width;
+  const tx = gameCanvas.width / 2;
+  const ty = 30;
+  ctx.fillStyle = "rgba(0,0,0,0.ទ
+
+  ctx.fillStyle = "#021013";
+  ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+  const now = performance.now();
+
+  drawCells(ctx, cameraX, cameraY, gameCanvas.width, gameCanvas.height);
+
+  for (let fd of flyingDigits) {
+    fd.draw(ctx, now);
+  }
+
+  for (let i = 0; i < 2; i++) {
+    const rectX = i * gameCanvas.width / 2;
+    const rectY = gameCanvas.height - FOLDER_HEIGHT;
+    ctx.fillStyle = "#7AC0D6";
+    ctx.fillRect(rectX, rectY, gameCanvas.width / 2, FOLDER_HEIGHT);
+    ctx.strokeStyle = "#7AC0D6";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(rectX, rectY, gameCanvas.width / 2, FOLDER_HEIGHT);
+    ctx.font = "24px Arial";
+    ctx.fillStyle = "#021013";
+    ctx.textAlign = "center";
+    ctx.fillText(`${folderNames[i]}: ${folderScores[i]}`, rectX + gameCanvas.width / 4, rectY + FOLDER_HEIGHT / 2);
+  }
+
+  ctx.save();
+  ctx.font = "24px Arial";
+  const scoreText = `Score: ${scoreTotal}`;
+  const sw = ctx.measureText(scoreText).width;
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  ctx.fillRect(10, 10, sw + 10, 30);
+  ctx.fillStyle = "#7AC0D6";
+  ctx.textAlign = "left";
+  ctx.fillText(scoreText, 15, 32);
+  ctx.restore();
+
   ctx.save();
   ctx.font = "24px Arial";
   const timerText = `${Math.floor(timeLeft)} s.`;
@@ -341,7 +372,6 @@ function drawGame() {
   ctx.fillText(timerText, tx, ty);
   ctx.restore();
 
-  // Анимации "+N s"
   for (const k in timeAnimations) {
     const anim = timeAnimations[k];
     const keep = anim.draw(ctx, now);
@@ -364,9 +394,7 @@ function gameLoop() {
 }
 requestAnimationFrame(gameLoop);
 
-// ---------- START GAME ----------
 function startGame() {
-  // Сбрасываем объекты игры, но НЕ трогаем currentPlayer
   for (const k in cells) delete cells[k];
   generatedChunks.clear();
   folderScores[0] = 0;
@@ -379,18 +407,18 @@ function startGame() {
   cameraX = 0;
   cameraY = 0;
 
-  // Генерация начальных чанков
   for (let cx = -1; cx <= 2; cx++) {
     for (let cy = -1; cy <= 2; cy++) {
       generateChunk(cx, cy);
     }
   }
 
+  playStartSound(); // Звук старта
+
   gameState = "game";
   updateUI();
 }
 
-// ---------- UPDATE UI ----------
 function updateUI() {
   if (gameState === "menu") {
     menuContainer.style.display = "flex";
@@ -400,7 +428,7 @@ function updateUI() {
     loginContainer.style.display   = "none";
 
     topNav.style.display = "flex";
-    fullscreenButton.style.display = "block"; // Явно показываем кнопку
+    fullscreenButton.style.display = "block";
 
   } else if (gameState === "game") {
     menuContainer.style.display   = "none";
@@ -410,7 +438,7 @@ function updateUI() {
     loginContainer.style.display  = "none";
 
     topNav.style.display = "none";
-    fullscreenButton.style.display = "none"; // Скрываем в игре
+    fullscreenButton.style.display = "none";
 
   } else if (gameState === "game_over") {
     menuContainer.style.display   = "none";
@@ -422,9 +450,8 @@ function updateUI() {
     gameOverOverlay.style.display = "block";
 
     topNav.style.display = "none";
-    fullscreenButton.style.display = "none"; // Скрываем при game over
+    fullscreenButton.style.display = "none";
   }
 }
 
-// При старте → меню
 updateUI();
