@@ -9,6 +9,12 @@ import {
 } from "./game.js";
 import { fetchAllParticipantsFromXano } from "./api.js";
 
+// ---------------------
+// 1) ЗВУК ДЛЯ +1 (plus.wav)
+// ---------------------
+const plusSound = new Audio("plus.wav");
+plusSound.volume = 0.8; // Примерно 80% громкости
+
 // ---------- HTML ELEMENTS ----------
 const fullscreenButton = document.getElementById("fullscreenButton");
 const topNav           = document.getElementById("topNav");
@@ -56,11 +62,8 @@ let lastUpdateTime = performance.now();
 let lastScore = 0;
 
 // ---------- FULLSCREEN BUTTON ----------
-// Теперь вызываем document.documentElement.requestFullscreen() - 
-// чтоб весь документ был fullscreen и кнопки оставались кликабельными
 fullscreenButton.addEventListener("click", () => {
   if (!document.fullscreenElement) {
-    // Вместо gameCanvas.requestFullscreen()
     document.documentElement.requestFullscreen();
   } else {
     document.exitFullscreen();
@@ -74,11 +77,11 @@ btnStart.addEventListener("click", () => {
 btnRecords.addEventListener("click", () => {
   showRecordsOverlay();
 });
-// Вместо alert — открываем vk.com в новой вкладке
+// BUY TOKEN → открываем нужную ссылку
 btnBuy.addEventListener("click", () => {
   window.open("https://odin.fun/", "_blank");
 });
-// <-- NEW:
+// X (TWITTER)
 const btnTwitter = document.getElementById("btnTwitter");
 btnTwitter.addEventListener("click", () => {
   window.open("https://x.com/ANOMALIESGAME", "_blank");
@@ -182,7 +185,7 @@ gameCanvas.addEventListener("click", (e) => {
   const anomaly = digit.anomaly;
   const currentTime = performance.now();
 
-  // Собираем аномалии
+  // Собираем аномалии (UPSIDE / STRANGE)
   if (anomaly === Digit.ANOMALY_UPSIDE || anomaly === Digit.ANOMALY_STRANGE) {
     const group = bfsCollectAnomaly(gx, gy, anomaly);
     if (group.length >= 5) {
@@ -199,6 +202,12 @@ gameCanvas.addEventListener("click", (e) => {
       scoreTotal += group.length * 10;
       folderScores[idx] += group.length;
       timeLeft += 1;
+
+      // ---------------------
+      // Воспроизводим звук!
+      // ---------------------
+      plusSound.play();
+
       const plusAnim = new TimePlusAnimation("+1 s", 200, 20, currentTime, 2000);
       timeAnimations[Date.now()] = plusAnim;
       return;
@@ -220,6 +229,12 @@ gameCanvas.addEventListener("click", (e) => {
     scoreTotal += groupVal.length * 10;
     folderScores[0] += groupVal.length;
     timeLeft += 1;
+
+    // ---------------------
+    // Звук тоже здесь!
+    // ---------------------
+    plusSound.play();
+
     const plusAnim = new TimePlusAnimation("+1 s", 200, 20, currentTime, 2000);
     timeAnimations[Date.now()] = plusAnim;
   }
@@ -263,12 +278,12 @@ function drawGame() {
   // Рисуем клетки
   drawCells(ctx, cameraX, cameraY, gameCanvas.width, gameCanvas.height);
 
-  // Рисуем летающие цифры
+  // Летающие цифры
   for (let fd of flyingDigits) {
     fd.draw(ctx, now);
   }
 
-  // Папки (Upside, Strange) внизу
+  // Папки снизу (Upside, Strange)
   for (let i = 0; i < 2; i++) {
     const rectX = i * gameCanvas.width / 2;
     const rectY = gameCanvas.height - FOLDER_HEIGHT;
@@ -309,7 +324,7 @@ function drawGame() {
   ctx.fillText(timerText, tx, ty);
   ctx.restore();
 
-  // Анимации +N s
+  // Анимации "+N s"
   for (const k in timeAnimations) {
     const anim = timeAnimations[k];
     const keep = anim.draw(ctx, now);
@@ -360,29 +375,24 @@ function startGame() {
 // ---------- UPDATE UI ----------
 function updateUI() {
   if (gameState === "menu") {
-    // Показываем меню
     menuContainer.style.display = "flex";
     gameCanvas.style.display    = "none";
     gameOverOverlay.style.display = "none";
     recordsContainer.style.display = "none";
     loginContainer.style.display   = "none";
 
-    // Показываем верхнюю панель с тремя играми
     topNav.style.display = "flex";
 
   } else if (gameState === "game") {
-    // Прячем меню
     menuContainer.style.display   = "none";
     gameCanvas.style.display      = "block";
     gameOverOverlay.style.display = "none";
     recordsContainer.style.display= "none";
     loginContainer.style.display  = "none";
 
-    // Скрываем верхнюю панель во время игры
     topNav.style.display = "none";
 
   } else if (gameState === "game_over") {
-    // Показываем холст, прячем меню
     menuContainer.style.display   = "none";
     gameCanvas.style.display      = "block";
     recordsContainer.style.display= "none";
@@ -391,7 +401,6 @@ function updateUI() {
     finalScore.textContent = `Your score: ${lastScore}`;
     gameOverOverlay.style.display = "block";
 
-    // Скрываем верхнюю панель и на экране game_over
     topNav.style.display = "none";
   }
 }
