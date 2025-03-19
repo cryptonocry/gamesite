@@ -19,7 +19,7 @@ function playCollectSound() {
 
 function playStartSound() {
   const s = new Audio("start.wav");
-  s.volume = 0.7;
+  s.volume = 0.4;
   s.play();
 }
 
@@ -34,7 +34,7 @@ function playRightClickSound() {
   const soundFiles = ["1.wav", "2.wav", "3.wav", "4.wav"];
   const soundIndex = rightClickCount % 4;
   const s = new Audio(soundFiles[soundIndex]);
-  s.volume = 0.3;
+  s.volume = 0.1;
   s.play();
   rightClickCount++;
 }
