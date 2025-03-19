@@ -74,8 +74,9 @@ btnStart.addEventListener("click", () => {
 btnRecords.addEventListener("click", () => {
   showRecordsOverlay();
 });
+// Вместо alert — открываем vk.com в новой вкладке
 btnBuy.addEventListener("click", () => {
-  alert("Here you can implement your token purchase logic.");
+  window.open("https://odin.fun/", "_blank");
 });
 // <-- NEW:
 const btnTwitter = document.getElementById("btnTwitter");
