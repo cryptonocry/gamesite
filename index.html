@@ -31,24 +31,20 @@
       color: #021013;
     }
 
-    /* 
-       ВЕСЬ МЕНЮ-КОНТЕЙНЕР (включая «верхние кнопки» Anomalies / Stray / Arcanum, 
-       и также Start/Records/Buy, и картинки снизу) 
-    */
+    /* MENU CONTAINER */
     #menuContainer {
       position: absolute;
-      top: 0; 
-      left: 0;
+      top: 0; left: 0;
       width: 100%;
       height: 100%;
-      display: none; /* показываем когда gameState="menu" */
+      display: none; /* показывается, когда gameState="menu" */
       flex-direction: column;
       background: #021013;
       color: #7AC0D6;
-      z-index: 100; 
+      z-index: 100;
     }
 
-    /* ВЕРХНЯЯ ПАНЕЛЬ (Anomalies / Stray / Arcanum / Twitter) */
+    /* ВЕРХНЯЯ ПАНЕЛЬ (ANOMALIES / STRAY / ARCANUM / TWITTER) – теперь часть menuContainer */
     #menuTopRow {
       display: flex;
       flex-direction: row;
@@ -81,8 +77,8 @@
 
     /* ВЕРХНЯЯ ЧАСТЬ (ANOMALIES GAME) */
     #topSection {
-      flex: 0 0 auto;         
-      padding: 30px 0 20px 0; 
+      flex: 0 0 auto;
+      padding: 30px 0 20px 0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -98,7 +94,7 @@
       font-size: 22px;
     }
 
-    /* СРЕДНЯЯ ЧАСТЬ (кнопки слева + текст справа) */
+    /* СРЕДНЯЯ ЧАСТЬ (кнопки слева, текст справа) */
     #centerSection {
       flex: 0 0 auto;         
       display: flex;
@@ -155,9 +151,8 @@
       font-weight: bold;
     }
 
-    /* НИЖНЯЯ ЧАСТЬ (примеры цифр) */
+    /* НИЖНЯЯ ЧАСТЬ (примеры) */
     #bottomSection {
-      flex: 0 0 auto;
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -183,8 +178,7 @@
     /* CANVAS (игра) */
     #gameCanvas {
       position: absolute;
-      top: 0; 
-      left: 0;
+      top: 0; left: 0;
       width: 100vw;
       height: 100vh;
       display: none; 
@@ -195,17 +189,14 @@
     #gameOverOverlay {
       display: none;
       position: absolute;
-      top: 0; 
-      left: 0;
-      width: 100%; 
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       background: rgba(0,0,0,0.75);
       color: #7AC0D6;
     }
     #gameOverContent {
       position: absolute;
-      top: 50%; 
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
     }
@@ -234,8 +225,7 @@
     /* RECORDS OVERLAY */
     #recordsContainer {
       position: absolute;
-      top: 0; 
-      left: 0;
+      top: 0; left: 0;
       width: 100%; 
       height: 100%;
       background: rgba(0,0,0,0.9);
@@ -275,12 +265,13 @@
   </style>
 </head>
 <body>
-  <!-- FULLSCREEN BUTTON (отдельно, всегда видна) -->
+  <!-- FULLSCREEN BUTTON -->
   <button id="fullscreenButton">Fullscreen</button>
 
-  <!-- МЕНЮ-КОНТЕЙНЕР (ВКЛЮЧАЕТ верхний ряд кнопок (Anomalies/Stray/Arc) + всё остальное) -->
+  <!-- МЕНЮ (включая верхние кнопки: Anomalies / Stray / Arcanum / Twitter) -->
   <div id="menuContainer">
-    <!-- Верхняя панель (ранее topNav) -->
+    
+    <!-- Верхняя панель -->
     <div id="menuTopRow">
       <button class="navButton navActive">ANOMALIES</button>
       <button class="navButton navDisabled">STRAY (SOON)</button>
@@ -288,13 +279,13 @@
       <button class="navButton" id="btnTwitter">X (TWITTER)</button>
     </div>
 
-    <!-- Топ-секция (заголовок + подпись) -->
+    <!-- Топ-секция (заголовок, подзаголовок) -->
     <div id="topSection">
       <h1>ANOMALIES GAME</h1>
       <p>Collect as many unusual digits as you can in 60 seconds!</p>
     </div>
 
-    <!-- Центр (Start Game, Records, Buy + Objective/Controls) -->
+    <!-- Средняя часть (кнопки и текст) -->
     <div id="centerSection">
       <div id="centerLeft">
         <button id="btnStart"   class="menuButton">Start Game</button>
@@ -316,7 +307,7 @@
       </div>
     </div>
 
-    <!-- Низ (примеры) -->
+    <!-- Нижняя часть (примеры) -->
     <div id="bottomSection">
       <div class="exampleBlock">
         <h3>Upside-down digits</h3>
@@ -342,7 +333,7 @@
     </div>
   </div>
 
-  <!-- RECORDS OVERLAY (показывается при нажатии Records) -->
+  <!-- RECORDS OVERLAY -->
   <div id="recordsContainer">
     <div id="recordsContent">
       <h2>Ranking</h2>
