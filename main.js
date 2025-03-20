@@ -110,7 +110,7 @@ btnBuy.addEventListener("click", () => {
 
 const btnTwitter = document.getElementById("btnTwitter");
 btnTwitter.addEventListener("click", () => {
-  window.open("https://x.com/ANOMALIESGAME", "_blank");
+  window.open("https://odin.fun", "_blank");
 });
 
 // ---------- LOGIN OVERLAY ----------
