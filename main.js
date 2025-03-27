@@ -105,12 +105,12 @@ btnRecords.addEventListener("click", () => {
 });
 
 btnBuy.addEventListener("click", () => {
-  window.open("https://odin.fun/token/2b11", "_blank");
+  window.open("https://odin.fun/token/", "_blank");
 });
 
 const btnTwitter = document.getElementById("btnTwitter");
 btnTwitter.addEventListener("click", () => {
-  window.open("https://odin.fun/token/2b11", "_blank");
+  window.open("https://odin.fun/token/", "_blank");
 });
 
 // ---------- LOGIN OVERLAY ----------
