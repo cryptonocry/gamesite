@@ -105,12 +105,12 @@ btnRecords.addEventListener("click", () => {
 });
 
 btnBuy.addEventListener("click", () => {
-  window.open("https://odin.fun/token/2ddu", "_blank");
+  window.open("https://www.numerix.cc/", "_blank");
 });
 
 const btnTwitter = document.getElementById("btnTwitter");
 btnTwitter.addEventListener("click", () => {
-  window.open("https://odin.fun/token/2ddu", "_blank");
+  window.open("https://www.numerix.cc/", "_blank");
 });
 
 // ---------- LOGIN OVERLAY ----------
